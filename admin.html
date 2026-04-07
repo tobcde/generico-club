@@ -1047,8 +1047,8 @@ function renderPlayers() {
 
     html += '<div class="card" onclick="abrirM(' + (i+1) + ')" style="border-left-color:' + bc + '">';
     var fotoUrl = getDriveThumb(f[COL.FOTO], 'w200');
-    var fotoHtml = fotoUrl ? '<img src="' + fotoUrl + '" style="width:88px;height:108px;border-radius:8px;object-fit:cover;border:2px solid ' + bc + ';position:absolute;top:30px;right:8px;" onerror="this.parentNode.removeChild(this)">' : '';
-    var prStyle = fotoUrl ? 'padding-right:104px;' : '';
+    var fotoHtml = fotoUrl ? '<img src="' + fotoUrl + '" style="width:80px;height:96px;border-radius:8px;object-fit:cover;border:2px solid ' + bc + ';position:absolute;top:50%;right:8px;transform:translateY(-50%);" onerror="this.parentNode.removeChild(this)">' : '';
+    var prStyle = fotoUrl ? 'padding-right:96px;min-height:96px;' : '';
     html += '<div class="cat-badge" style="background:' + bc + '">' + cat + rango + '</div>';
     html += fotoHtml;
     html += '<div style="' + prStyle + '">';
