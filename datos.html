@@ -326,14 +326,10 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-
           <button class="upload-preview-remove" onclick="quitarFoto('foto')">&#x2715;</button>
         </div>
         <div id="zona-foto" style="display:block;">
-          <div style="display:flex;gap:10px;margin-bottom:10px;">
-            <label class="btn btn-outline btn-full" style="cursor:pointer;flex:1;">
-              &#x1F933; Cámara frontal
+          <div style="margin-bottom:10px;">
+            <label class="btn btn-outline btn-full" style="cursor:pointer;">
+              &#x1F4F7; Abrir cámara
               <input type="file" accept="image/*" capture="user" style="display:none;" onchange="cargarFoto('foto',this)">
-            </label>
-            <label class="btn btn-outline btn-full" style="cursor:pointer;flex:1;">
-              &#x1F4F7; Cámara trasera
-              <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="cargarFoto('foto',this)">
             </label>
           </div>
           <label class="btn btn-outline btn-full" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -561,11 +557,21 @@ function detenerCam(n){
 }
 
 function capturar(n) {
-  var video=document.getElementById('cam'+n+'-video');
-  var canvas=document.createElement('canvas');
-  canvas.width=video.videoWidth||640; canvas.height=video.videoHeight||480;
-  canvas.getContext('2d').drawImage(video,0,0);
-  setImagen(n, canvas.toDataURL('image/jpeg', 0.85));
+  var video = document.getElementById('cam'+n+'-video');
+  var vw = video.videoWidth || 640;
+  var vh = video.videoHeight || 480;
+
+  // Recortar el area del recuadro guia (85% ancho, 65% alto, centrado)
+  var cropW = Math.round(vw * 0.85);
+  var cropH = Math.round(vh * 0.65);
+  var cropX = Math.round((vw - cropW) / 2);
+  var cropY = Math.round((vh - cropH) / 2);
+
+  var canvas = document.createElement('canvas');
+  canvas.width = cropW;
+  canvas.height = cropH;
+  canvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  setImagen(n, canvas.toDataURL('image/jpeg', 0.90));
   detenerCam(n);
 }
 
