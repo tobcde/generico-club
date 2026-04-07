@@ -1,0 +1,26 @@
+{
+  "name": "Sistema de Gestion - Profesores",
+  "short_name": "SGD Profes",
+  "description": "App para instructores: turnos, asistencia y gestion de alumnos",
+  "start_url": "/generico-club/profes.html",
+  "scope": "/generico-club/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/profes/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/profes/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

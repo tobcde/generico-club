@@ -1,0 +1,26 @@
+{
+  "name": "Sistema de Gestion - Autoregistro",
+  "short_name": "SGD Registro",
+  "description": "Autoregistro de socios con DNI y consulta de estado",
+  "start_url": "/generico-club/datos.html",
+  "scope": "/generico-club/",
+  "display": "standalone",
+  "background_color": "#1a0a00",
+  "theme_color": "#f97316",
+  "orientation": "portrait",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/datos/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/datos/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
