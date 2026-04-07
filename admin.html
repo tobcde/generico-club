@@ -932,7 +932,27 @@ function inicializar() {
       }
     }
     callScript({action:'getAsistencias', pass:TOKEN}, function(r){ asistencias = Array.isArray(r) ? r : (r && r.data ? r.data : []); finCarga(); }, function(){ finCarga(); });
-    callScript({action:'getCuotas', pass:TOKEN}, function(r){ CUOTAS_DB = r; renderListPlanes(); finCarga(); }, function(){ finCarga(); });
+    callScript({action:'getCuotas', pass:TOKEN}, function(r){
+      // Normalizar cuotas de Sheets al formato unificado:
+      // Sheets:  [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs]
+      // Memoria: [DNI, Nombre, Plan, PeriodoDesde, PeriodoHasta, FechaPago, Monto, Metodo, ...]
+      // Formato unificado: c[0]=DNI, c[1]=Nombre, c[2]=Plan/Concepto, c[3]=PeriodoDesde, c[4]=PeriodoHasta/Fecha, c[5]=FechaPago, c[6]=Monto, c[7]=Metodo
+      if (r && r.cuotas) {
+        r.cuotas = r.cuotas.map(function(c) {
+          // Detectar si viene de Sheets: c[3] es numÃ©rico (DNI) y c[0] es string tipo "abril 2026"
+          var esDeSheets = c.length <= 8 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
+          if (esDeSheets) {
+            // Sheets: [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs]
+            // â†’ [DNI, Nombre, Concepto, Fecha, Fecha, Fecha, Monto, Metodo, '', Obs]
+            return [c[3], c[4], c[2], c[1], c[1], c[1], c[5], c[6], '', c[7]||''];
+          }
+          return c;
+        });
+      }
+      CUOTAS_DB = r;
+      renderListPlanes();
+      finCarga();
+    }, function(){ finCarga(); });
     cargarCamposExtra();
   }, function(e){ alert('Error: ' + e); ocultarLoader(); });
 }
@@ -1486,8 +1506,8 @@ function abrirM(ai) {
   document.getElementById('m-hist-cuotas').innerHTML = !hc.length ? '<p style="color:var(--muted);font-size:12px;">Sin pagos registrados</p>' :
     hc.map(function(c){
       return '<div class="hist-cuota-row"><div><div class="hist-periodo">' + (c[2]||'Sin plan') + '</div>'
-        + '<div class="hist-meta">' + (c[3]?'Desde '+c[3]:'') + (c[4]?' hasta '+c[4]:'') + '</div>'
-        + '<div class="hist-meta">' + (c[7]||'-') + ' - ' + (c[8]||'-') + ' - ' + (c[5]||'-') + '</div></div>'
+        + '<div class="hist-meta">Fecha: ' + (c[5]||'-') + '</div>'
+        + '<div class="hist-meta">' + (c[7]||'-') + '</div></div>'
         + '<div class="hist-monto">$' + Number(c[6]).toLocaleString('es-AR') + '</div></div>';
     }).join('');
   document.getElementById('modalEdicion').classList.add('open');
