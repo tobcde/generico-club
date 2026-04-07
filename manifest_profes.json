@@ -3,7 +3,7 @@
   "short_name": "SGD Profes",
   "description": "App para instructores: turnos, asistencia y gestion de alumnos",
   "start_url": "/generico-club/profes.html",
-  "scope": "/generico-club/",
+  "scope": "/generico-club/profes.html",
   "display": "standalone",
   "background_color": "#0d1117",
   "theme_color": "#2563eb",
