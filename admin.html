@@ -370,7 +370,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-save" onclick="agregarPeriodo()">AGREGAR PERIODO</button>
-        <button class="btn btn-secondary" onclick="generarPeriodosAnio()">GENERAR AÑO COMPLETO</button>
+        <button class="btn btn-secondary" onclick="generarPeriodosAnio()">GENERAR Aï¿½O COMPLETO</button>
       </div>
       <div id="listPeriodosAdmin" style="max-height:300px;overflow-y:auto;margin-top:10px;"></div>
       <button class="btn btn-gold" onclick="guardarPeriodos()" style="margin-top:8px;">GUARDAR TODOS LOS PERIODOS</button>
@@ -673,7 +673,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="filter-group"><label class="filter-label">Apellido *</label><input id="ns-apellido" class="edit-input" style="width:100%;"></div>
         <div class="filter-group"><label class="filter-label">Nombre *</label><input id="ns-nombre" class="edit-input" style="width:100%;"></div>
-        <div class="filter-group"><label class="filter-label">N° Documento *</label><input id="ns-dni" type="text" class="edit-input" style="width:100%;"></div>
+        <div class="filter-group"><label class="filter-label">Nï¿½ Documento *</label><input id="ns-dni" type="text" class="edit-input" style="width:100%;"></div>
         <div class="filter-group"><label class="filter-label">Fecha de nacimiento</label><input id="ns-fnac" type="date" class="edit-input" style="width:100%;"></div>
         <div class="filter-group"><label class="filter-label">Genero</label>
           <select id="ns-sexo" class="edit-input" style="width:100%;"><option>Masculino</option><option>Femenino</option></select></div>
@@ -731,14 +731,14 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxd_jBkx_lcPtRmkQ7EuUth1vDH5rvh8gt8GZgLUH6AVVQrltSZuqQx4Fi3IsTRXEkVmQ/exec';                        
                   
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
 //  ESTADO GLOBAL
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
 var DB = {jugadores:[], profesores:[], sedes:[], categorias:[], horarios:[], configPagos:[], institucion:{}};
 var CUOTAS_DB = {planes:[], cuotas:[]};
 var TOKEN = '', itemSel = null, catEditIdx = null, planEditIdx = null;
@@ -755,7 +755,7 @@ var COL = {
   FOTO:19, DNI_FOTO:20, APTO:21, COL_W:22, COL_X:23, DNI_DORSO:24
 };
 
-// ── TERMINOLOGIA DINAMICA ────────────────────────────────────────
+// -- TERMINOLOGIA DINAMICA ----------------------------------------
 function T(key) {
   var defaults = {socio:'Socio', socios:'Socios', grupo:'Categoria', grupos:'Categorias'};
   return INST['terminologia' + key.charAt(0).toUpperCase() + key.slice(1)] || defaults[key] || key;
@@ -780,7 +780,7 @@ function aplicarTerminologia() {
   set('lbl-horario-categoria', g);
 }
 
-// ── APLICAR COLORES Y BRANDING ───────────────────────────────────
+// -- APLICAR COLORES Y BRANDING -----------------------------------
 function aplicarBranding() {
   var p = INST.colorPrimario  || '#1a7a3c';
   var s = INST.colorSecundario || '#c9a227';
@@ -846,7 +846,7 @@ function ajustarBrillo(hex, factor) {
   } catch(e) { return hex; }
 }
 
-// ── COMUNICACION CON EL BACKEND ──────────────────────────────────
+// -- COMUNICACION CON EL BACKEND ----------------------------------
 function callScript(payload, onSuccess, onError, _retry) {
   if(payload.pass && !payload.token) payload.token = payload.pass;
   var action = payload.action || '';
@@ -885,7 +885,7 @@ function callScriptPost(payload, onSuccess, onError) {
     .catch(function(e){ if(onError) onError('Sin conexion.'); });
 }
 
-// ── LOGIN ────────────────────────────────────────────────────────
+// -- LOGIN --------------------------------------------------------
 function intentarLogin(){
   TOKEN = document.getElementById('passInput').value;
   if(!TOKEN) return alert('Ingresa la contrasena');
@@ -916,8 +916,21 @@ function inicializar() {
     renderPeriodosAdmin();
     document.getElementById('asistFecha').value = new Date().toISOString().split('T')[0];
     ocultarLoader();
+
+    // Mostrar spinner en el grid hasta que cuotas y asistencias esten listas
+    document.getElementById('gridJugadores').innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;">' +
+      '<div class="spinner" style="margin:0 auto 16px;width:36px;height:36px;border-width:3px;"></div>' +
+      '<p style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-family:\'Barlow Condensed\',sans-serif;">Cargando datos completos...</p>' +
+      '</div>';
+
     var pendientes = 2;
-    function finCarga(){ if(--pendientes === 0) renderPlayers(); }
+    function finCarga(){
+      if(--pendientes === 0){
+        renderPlayers();
+        renderCuotas();
+      }
+    }
     callScript({action:'getAsistencias', pass:TOKEN}, function(r){ asistencias = Array.isArray(r) ? r : (r && r.data ? r.data : []); finCarga(); }, function(){ finCarga(); });
     callScript({action:'getCuotas', pass:TOKEN}, function(r){ CUOTAS_DB = r; renderListPlanes(); finCarga(); }, function(){ finCarga(); });
     cargarCamposExtra();
@@ -937,7 +950,7 @@ function renderAll() {
   document.getElementById('asistFecha').value = new Date().toISOString().split('T')[0];
 }
 
-// ── HELPERS FECHA ────────────────────────────────────────────────
+// -- HELPERS FECHA ------------------------------------------------
 function parseDate(s){ if(!s) return null; var str = s.toString().trim(); if(str.includes('/')){ var p = str.split('/'); return new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0])); } if(/^\d{4}-\d{2}-\d{2}/.test(str)){ var p = str.substring(0,10).split('-'); return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])); } var d = new Date(str); return isNaN(d) ? null : d; }
 function formatDate(d){ if(!d) return ''; return d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear(); }
 function ultimoDiaMes(a,m){ return new Date(a,m,0).getDate(); }
@@ -954,7 +967,7 @@ function getDriveThumb(url, sz) {
   return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=' + sz;
 }
 
-// ── PERIODOS DE PAGO ─────────────────────────────────────────────
+// -- PERIODOS DE PAGO ---------------------------------------------
 function getFechaDesde(p){ return new Date(p.anioD, p.mes-1, parseInt(p.diaD)||1); }
 function getFechaHasta(p){ var anioH = p.anioH||p.anioD, diaH = parseInt(p.diaH)||0; if(diaH===0) diaH = ultimoDiaMes(anioH, p.mes); return new Date(anioH, p.mes-1, diaH); }
 function getFechaVenc(p){ var v = new Date(getFechaHasta(p)); v.setDate(v.getDate() + (parseInt(p.gracia)||0)); return v; }
@@ -995,7 +1008,7 @@ function getPlanJ(f){ return (f[COL.PLAN]||'').toString().trim(); }
 function getPlanObj(n){ if(!n) return null; var _n = (n||'').toString().trim().toLowerCase(); return CUOTAS_DB.planes.find(function(p){ return (p[0]||'').toString().trim().toLowerCase() === _n; }); }
 function periodoLabel(p){ var a = p.split('-'); var m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']; return m[parseInt(a[1])-1] + ' ' + a[0]; }
 
-// ── RENDER SOCIOS ────────────────────────────────────────────────
+// -- RENDER SOCIOS ------------------------------------------------
 function renderPlayers() {
   var busq = document.getElementById('busq').value.toLowerCase();
   var genF = document.getElementById('fGen').value, catF = document.getElementById('fCat').value;
@@ -1075,7 +1088,7 @@ function renderPlayers() {
   _s('statT', t); _s('statM', m); _s('statF', fc); _s('statD', deu); _s('statV', pv);
 }
 
-// ── CUOTAS ───────────────────────────────────────────────────────
+// -- CUOTAS -------------------------------------------------------
 function poblarPeriodos() {
   var sel = document.getElementById('cPeriodo'), now = new Date(), opts = '';
   for(var i=0; i<12; i++){
@@ -1223,7 +1236,7 @@ function exportarCSV() {
   a.href = url; a.download = 'cuotas_' + new Date().toISOString().split('T')[0] + '.csv'; a.click(); URL.revokeObjectURL(url);
 }
 
-// ── PLANES ADMIN ─────────────────────────────────────────────────
+// -- PLANES ADMIN -------------------------------------------------
 function renderListPlanes() {
   var el = document.getElementById('listPlanes');
   if(!el) return;
@@ -1255,7 +1268,7 @@ function guardarPlan() {
   else callScript({action:'addComplexItem', tabName:'Config_Planes', rowArray:row, pass:TOKEN}, cb);
 }
 
-// ── PERIODOS ─────────────────────────────────────────────────────
+// -- PERIODOS -----------------------------------------------------
 function agregarPeriodo() {
   var mes = parseInt(document.getElementById('pMes').value), anioD = parseInt(document.getElementById('pAnioD').value);
   var diaD = document.getElementById('pDiaD').value, anioH = document.getElementById('pAnioH').value||anioD;
@@ -1293,7 +1306,7 @@ function guardarPeriodos() {
   callScript({action:'reemplazarHoja', tabName:'Config_Periodos', rows:rows, pass:TOKEN}, function(){ inicializar(); toast('Periodos guardados', 'ok'); }, function(e){ ocultarLoader(); alert('Error: ' + e); });
 }
 
-// ── ASISTENCIAS ──────────────────────────────────────────────────
+// -- ASISTENCIAS --------------------------------------------------
 function onCambioFechaAsist() { poblarTurnosAsist(); }
 
 function onCambioTurnoAsist() {
@@ -1413,7 +1426,7 @@ function guardarAsist() {
   }, function(e){ ocultarLoader(); alert('Error: ' + e); });
 }
 
-// ── MODAL SOCIO ──────────────────────────────────────────────────
+// -- MODAL SOCIO --------------------------------------------------
 function getStatsJ(dni) {
   var h = new Date(), mes = h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0');
   var reg = asistencias.filter(function(r){ return r[3] == dni && r[0].startsWith(mes); });
@@ -1568,7 +1581,7 @@ function btnContacto(tel) {
     + ' <a href="https://wa.me/54' + t + '" target="_blank" style="color:#25D366;font-size:13px;text-decoration:none;margin-left:8px;">WhatsApp</a>';
 }
 
-// ── NUEVO SOCIO ──────────────────────────────────────────────────
+// -- NUEVO SOCIO --------------------------------------------------
 function abrirNuevoSocio() {
   ['ns-apellido','ns-nombre','ns-dni','ns-fnac','ns-celular','ns-email','ns-domicilio','ns-obs'].forEach(function(id){
     var el = document.getElementById(id); if(el) el.value = '';
@@ -1624,7 +1637,7 @@ function guardarNuevoSocio() {
   }, function(e){ ocultarLoader(); _err('Error: ' + e); });
 }
 
-// ── COMPROBANTE ──────────────────────────────────────────────────
+// -- COMPROBANTE --------------------------------------------------
 function ofrecerEnvioComprobante(datos) {
   if(!datos) return;
   document.getElementById('comp-nombre').innerText = datos.nombre||'';
@@ -1657,7 +1670,7 @@ function enviarComprobanteEmail() {
   );
 }
 
-// ── ADMIN ABM ────────────────────────────────────────────────────
+// -- ADMIN ABM ----------------------------------------------------
 function renderList(id, data, tabla) {
   var el = document.getElementById(id); if(!el) return;
   el.innerHTML = data.map(function(item){
@@ -1741,7 +1754,7 @@ function autoAsignarPlanes() {
   }, function(e){ ocultarLoader(); alert('Error: '+e); });
 }
 
-// ── INSTITUCION ──────────────────────────────────────────────────
+// -- INSTITUCION --------------------------------------------------
 function cargarFormInstitucion() {
   var campos = ['nombre','nombreCorto','logoUrl','colorPrimario','colorSecundario','terminologiaSocio','terminologiaSocios','terminologiaGrupo','terminologiaGrupos','emailRemitente'];
   campos.forEach(function(c){
@@ -1815,7 +1828,7 @@ function eliminarCampoExtra(nombre) {
   }, function(e){ ocultarLoader(); alert('Error: '+e); });
 }
 
-// ── REPORTES ─────────────────────────────────────────────────────
+// -- REPORTES -----------------------------------------------------
 function iniciarReportes() {
   var sel = document.getElementById('rMes'); if(!sel) return;
   var now = new Date(), opts = '';
@@ -1993,7 +2006,7 @@ function exportarReporteCSV() {
   a.href = url; a.download = 'reporte_' + new Date().toISOString().split('T')[0] + '.csv'; a.click(); URL.revokeObjectURL(url);
 }
 
-// ── TABS ─────────────────────────────────────────────────────────
+// -- TABS ---------------------------------------------------------
 function cambiarTab(ev, id) {
   document.querySelectorAll('.tab-content').forEach(function(c){ c.style.display = 'none'; });
   document.getElementById('tab-' + id).style.display = 'block';
@@ -2004,7 +2017,7 @@ function cambiarTab(ev, id) {
   if(id === 'institucion'){ cargarFormInstitucion(); cargarCamposExtra(); }
 }
 
-// ── TOAST ────────────────────────────────────────────────────────
+// -- TOAST --------------------------------------------------------
 function toast(msg, tipo) {
   var el = document.getElementById('toast');
   el.innerText = msg;
@@ -2014,7 +2027,7 @@ function toast(msg, tipo) {
   setTimeout(function(){ el.style.display = 'none'; }, 3000);
 }
 
-// ── WEBAUTHN ─────────────────────────────────────────────────────
+// -- WEBAUTHN -----------------------------------------------------
 window.addEventListener('load', function() {
   if(!window.PublicKeyCredential) return;
   if(localStorage.getItem(WA_CRED_KEY)){
@@ -2061,7 +2074,7 @@ async function loginConHuella() {
   }catch(e){ toast('No se pudo verificar la huella','err'); }
 }
 
-// ── PWA ──────────────────────────────────────────────────────────
+// -- PWA ----------------------------------------------------------
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
@@ -2092,4 +2105,4 @@ window.onload = function() {
 };
 </script>
 </body>
-</html>
+</ht
