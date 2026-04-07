@@ -209,7 +209,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       SISTEMA DE <span>GESTION</span>
     </div>
     <p style="color:var(--muted);font-size:11px;margin-bottom:20px;text-transform:uppercase;letter-spacing:.1em;">Panel de Administracion</p>
-    <input type="password" id="passInput" placeholder="CONTRASENA" onkeyup="if(event.key==='Enter')intentarLogin()">
+    <input type="password" id="passInput" placeholder="CONTRASENA" onkeyup="if(event.key==='Enter')intentarLogin()" autocomplete="new-password">
     <button class="btn btn-save" style="width:100%;margin-bottom:10px;" onclick="intentarLogin()">INGRESAR</button>
     <button class="btn" id="btnHuella" style="width:100%;background:var(--surface2);border:1px solid var(--primary);color:var(--muted);font-size:13px;display:none;" onclick="loginConHuella()">
       &#x1F4F1; Entrar con huella / Face ID
@@ -719,7 +719,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.0</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.1</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -2058,6 +2058,8 @@ window.addEventListener('load', function() {
 function registrarHuella(pass) {
   if(!window.PublicKeyCredential) return;
   if(localStorage.getItem(WA_CRED_KEY)) return;
+  // Solo ofrecer en dispositivos tÃ¡ctiles (celular/tablet), no en desktop
+  if(!navigator.maxTouchPoints || navigator.maxTouchPoints === 0) return;
   setTimeout(function(){
     if(!confirm('Queres ingresar con huella / Face ID la proxima vez?')) return;
     var challenge = new Uint8Array(32); crypto.getRandomValues(challenge);
