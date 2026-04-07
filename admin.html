@@ -719,7 +719,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.1</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.2</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -940,11 +940,12 @@ function inicializar() {
       if (r && r.cuotas) {
         r.cuotas = r.cuotas.map(function(c) {
           // Detectar si viene de Sheets: c[3] es numÃ©rico (DNI) y c[0] es string tipo "abril 2026"
-          var esDeSheets = c.length <= 8 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
+          var esDeSheets = c.length <= 9 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
           if (esDeSheets) {
-            // Sheets: [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs]
-            // â†’ [DNI, Nombre, Concepto, Fecha, Fecha, Fecha, Monto, Metodo, '', Obs]
-            return [c[3], c[4], c[2], c[1], c[1], c[1], c[5], c[6], '', c[7]||''];
+            // Sheets: [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs, PeriodoHasta]
+            // â†’ [DNI, Nombre, Concepto, Hasta, Hasta, FechaPago, Monto, Metodo, '', Obs]
+            var hasta = c[8] || c[1]; // col I = periodoHasta, fallback a fecha de pago
+            return [c[3], c[4], c[2], hasta, hasta, c[1], c[5], c[6], '', c[7]||''];
           }
           return c;
         });
