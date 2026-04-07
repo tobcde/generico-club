@@ -568,6 +568,15 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
         </div>
       </div>
       <div class="modal-section">
+        <div class="modal-section-title">Contactos de emergencia</div>
+        <div class="modal-grid">
+          <div class="modal-field"><span class="modal-field-label">Contacto 1</span><div class="modal-field-value" id="m-contacto1"></div></div>
+          <div class="modal-field"><span class="modal-field-label">TelÃ©fono C1</span><div class="modal-field-value" id="m-contacto1-tel"></div></div>
+          <div class="modal-field"><span class="modal-field-label">Contacto 2</span><div class="modal-field-value" id="m-contacto2"></div></div>
+          <div class="modal-field"><span class="modal-field-label">TelÃ©fono C2</span><div class="modal-field-value" id="m-contacto2-tel"></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
         <div class="modal-section-title" id="lbl-modal-grupo">Categoria y estado</div>
         <div class="modal-grid">
           <div class="modal-field"><span class="modal-field-label">Estado</span>
@@ -685,6 +694,15 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
         <div class="filter-group"><label class="filter-label">Plan</label>
           <select id="ns-plan" class="edit-input" style="width:100%;"></select></div>
         <div class="filter-group full" style="grid-column:1/-1;"><label class="filter-label">Observaciones</label><input id="ns-obs" class="edit-input" style="width:100%;"></div>
+        <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:6px;padding-top:12px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Contactos de emergencia</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="filter-group"><label class="filter-label">Contacto 1 - Nombre</label><input id="ns-c1nombre" class="edit-input" style="width:100%;" placeholder="Nombre completo"></div>
+            <div class="filter-group"><label class="filter-label">TelÃ©fono</label><input id="ns-c1tel" type="tel" class="edit-input" style="width:100%;" placeholder="Ej: 1122334455"></div>
+            <div class="filter-group"><label class="filter-label">Contacto 2 - Nombre</label><input id="ns-c2nombre" class="edit-input" style="width:100%;" placeholder="Nombre completo"></div>
+            <div class="filter-group"><label class="filter-label">TelÃ©fono</label><input id="ns-c2tel" type="tel" class="edit-input" style="width:100%;" placeholder="Ej: 1133445566"></div>
+          </div>
+        </div>
       </div>
       <button class="btn btn-save" onclick="guardarNuevoSocio()" style="width:100%;margin-top:16px;padding:14px;font-size:14px;">GUARDAR</button>
     </div>
@@ -719,7 +737,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.2</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.3</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -734,7 +752,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxd_jBkx_lcPtRmkQ7EuUth1vDH5rvh8gt8GZgLUH6AVVQrltSZuqQx4Fi3IsTRXEkVmQ/exec';                        
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw65Hu-_aX9omplansRc4HX4nSyHK1AL5NlBm25_6dXfi9QCPPAin2jseHLfDaRtYnSPw/exec';                        
                   
 // ---------------------------------------------------------------
 //  ESTADO GLOBAL
@@ -752,7 +770,7 @@ var COL = {
   ACTIVO:6, TIPO_DOC:7, DNI:8, FECHA_NAC:9, SEXO:10,
   DOMICILIO:11, OBS:12, MEMBRESIA:13, VENCIMIENTO:14,
   FECHA_ING:15, CREADOR:16, CATEGORIA_APP:17, PLAN:18,
-  FOTO:19, DNI_FOTO:20, APTO:21, COL_W:22, COL_X:23, DNI_DORSO:24
+  FOTO:19, DNI_FOTO:20, APTO:21, CONTACTO1:22, CONTACTO2:23, DNI_DORSO:24
 };
 
 // -- TERMINOLOGIA DINAMICA ----------------------------------------
@@ -1474,6 +1492,15 @@ function abrirM(ai) {
   document.getElementById('m-celular').innerHTML = btnContacto(f[COL.CELULAR]||f[COL.TEL]);
   document.getElementById('m-domicilio').innerText = (f[COL.DOMICILIO]||'').toString().trim() || 'Sin registro';
   document.getElementById('m-obs').innerText = f[COL.OBS]||'Ninguna';
+  // Contactos de emergencia (guardados como "Nombre|Tel")
+  var c1raw = (f[COL.CONTACTO1]||'').toString();
+  var c2raw = (f[COL.CONTACTO2]||'').toString();
+  var c1p = c1raw.split('|');
+  var c2p = c2raw.split('|');
+  document.getElementById('m-contacto1').innerHTML = btnContactoEmergencia(c1p[0]||'', c1p[1]||'');
+  document.getElementById('m-contacto1-tel').innerHTML = '';
+  document.getElementById('m-contacto2').innerHTML = btnContactoEmergencia(c2p[0]||'', c2p[1]||'');
+  document.getElementById('m-contacto2-tel').innerHTML = '';
   document.getElementById('m-membresia').innerText = f[COL.MEMBRESIA]||'-';
   document.getElementById('m-venc-planilla').innerText = f[COL.VENCIMIENTO]||'-';
   mostrarFotoInline('l-perfil', f[COL.FOTO], false);
@@ -1595,6 +1622,17 @@ function mostrarFotoInline(id, url, esPdf) {
   el.innerHTML = '<img src="' + thumb + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.innerHTML=\'<span style=\\\'color:var(--muted);font-size:11px;\\\'>Error al cargar</span>\'">';
 }
 
+function btnContactoEmergencia(nombre, tel) {
+  if(!nombre && !tel) return '<span style="color:var(--muted);font-size:11px;">No registrado</span>';
+  var html = nombre ? '<span style="font-size:13px;font-weight:600;">' + nombre + '</span>' : '';
+  if(tel) {
+    var t = tel.toString().replace(/\D/g,'');
+    html += (html?'<br>':'') + '<a href="tel:' + tel + '" style="color:var(--primary);font-size:12px;text-decoration:none;margin-right:10px;">&#x1F4DE; ' + tel + '</a>';
+    html += '<a href="https://wa.me/54' + t + '" target="_blank" style="color:#25D366;font-size:12px;font-weight:700;text-decoration:none;">&#x1F4AC; WhatsApp</a>';
+  }
+  return html || '<span style="color:var(--muted);font-size:11px;">No registrado</span>';
+}
+
 function btnContacto(tel) {
   if(!tel) return '<span style="color:var(--muted);font-size:11px;">Sin telefono</span>';
   var t = tel.toString().replace(/\D/g,'');
@@ -1604,7 +1642,7 @@ function btnContacto(tel) {
 
 // -- NUEVO SOCIO --------------------------------------------------
 function abrirNuevoSocio() {
-  ['ns-apellido','ns-nombre','ns-dni','ns-fnac','ns-celular','ns-email','ns-domicilio','ns-obs'].forEach(function(id){
+  ['ns-apellido','ns-nombre','ns-dni','ns-fnac','ns-celular','ns-email','ns-domicilio','ns-obs','ns-c1nombre','ns-c1tel','ns-c2nombre','ns-c2tel'].forEach(function(id){
     var el = document.getElementById(id); if(el) el.value = '';
   });
   document.getElementById('ns-sexo').value = 'Masculino';
@@ -1639,10 +1677,17 @@ function guardarNuevoSocio() {
     email:document.getElementById('ns-email').value.trim(),
     domicilio:document.getElementById('ns-domicilio').value.trim(),
     obs:document.getElementById('ns-obs').value.trim(),
+    c1nombre:(document.getElementById('ns-c1nombre')||{value:''}).value.trim(),
+    c1tel:(document.getElementById('ns-c1tel')||{value:''}).value.trim(),
+    c2nombre:(document.getElementById('ns-c2nombre')||{value:''}).value.trim(),
+    c2tel:(document.getElementById('ns-c2tel')||{value:''}).value.trim(),
     categoria:document.getElementById('ns-categoria').value,
     plan:document.getElementById('ns-plan').value
   };
   mostrarLoader('Guardando...');
+  // Armar contactos en formato "Nombre|Tel"
+  jug.contacto1 = [jug.c1nombre, jug.c1tel].filter(Boolean).join('|');
+  jug.contacto2 = [jug.c2nombre, jug.c2tel].filter(Boolean).join('|');
   callScript({action:'addSocio', campos:jug, pass:TOKEN, _noRetry:true}, function(r){
     ocultarLoader();
     if(r && r.ok === false){ _err(r.error||'Error al guardar'); return; }
@@ -1653,6 +1698,8 @@ function guardarNuevoSocio() {
     nf[COL.EMAIL]=jug.email; nf[COL.CELULAR]=jug.celular; nf[COL.FECHA_NAC]=jug.fechaNac;
     nf[COL.SEXO]=jug.sexo; nf[COL.DOMICILIO]=jug.domicilio; nf[COL.ACTIVO]=true;
     nf[COL.CATEGORIA_APP]=jug.categoria; nf[COL.PLAN]=jug.plan;
+    nf[COL.CONTACTO1] = jug.contacto1||'';
+    nf[COL.CONTACTO2] = jug.contacto2||'';
     nf.push('Hoja 1'); nf.push(r.fila||999);
     DB.jugadores.push(nf); renderPlayers();
   }, function(e){ ocultarLoader(); _err('Error: ' + e); });
