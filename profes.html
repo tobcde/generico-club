@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title id="page-title">Sistema de Gestión - Personal</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" id="meta-theme" content="#1a7a3c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root {
+  --primary: #1a7a3c;
+  --primary-dark: #0f5228;
+  --secondary: #c9a227;
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2230;
+  --border: #2a3444;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --red: #f85149;
+  --red-dim: rgba(248,81,73,.15);
+  --red-border: rgba(248,81,73,.4);
+  --primary-dim: rgba(26,122,60,.15);
+  --primary-border: rgba(26,122,60,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh;}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
+#loader.hidden{display:none;}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loader p{margin-top:14px;color:var(--muted);font-size:13px;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100;}
+#login-screen.hidden{display:none;}
+.login-box{width:100%;max-width:380px;}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo img{width:72px;height:72px;border-radius:16px;margin-bottom:12px;object-fit:contain;}
+.login-logo h1{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;}
+.login-logo p{color:var(--muted);font-size:13px;margin-top:4px;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;}
+.field-wrap{position:relative;}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:8px;font-size:15px;font-family:'Barlow',sans-serif;transition:border-color .2s;}
+.field input:focus{outline:none;border-color:var(--primary);}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:all .2s;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);}
+.btn-bio{background:var(--surface2);border:1px solid var(--border);color:var(--text);margin-top:10px;}
+.btn-bio:hover{border-color:var(--primary);color:var(--primary);}
+.btn-link{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;width:100%;text-align:center;margin-top:12px;font-family:'Barlow',sans-serif;}
+.error-msg{background:var(--red-dim);border:1px solid var(--red-border);color:var(--red);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none;}
+
+/* CAMBIO PASS SCREEN */
+#cambio-pass-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;z-index:99;display:none;}
+#cambio-pass-screen.visible{display:flex;}
+.cambio-box{width:100%;max-width:380px;}
+
+/* APP */
+#app{display:none;}
+#app.visible{display:flex;flex-direction:column;min-height:100vh;}
+
+/* Header */
+.app-header{background:var(--surface);border-bottom:2px solid var(--primary);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.app-header-left{display:flex;align-items:center;gap:10px;}
+.app-header-left img{width:36px;height:36px;border-radius:8px;object-fit:contain;}
+.prof-name{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;}
+.prof-role{font-size:11px;color:var(--muted);}
+.header-btns{display:flex;gap:8px;}
+.icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;cursor:pointer;font-size:14px;}
+.icon-btn:hover{border-color:var(--primary);color:var(--primary);}
+
+/* Tabs */
+.app-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);}
+.app-tab{flex:1;padding:11px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.app-tab.active{color:var(--secondary);border-bottom-color:var(--secondary);}
+
+/* Secciones */
+.app-section{display:none;flex:1;padding:16px;}
+.app-section.active{display:block;}
+
+/* Asistencia */
+.asist-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;}
+.asist-card-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-family:'Barlow Condensed',sans-serif;margin-bottom:6px;}
+.select-input,.date-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;font-family:'Barlow',sans-serif;-webkit-appearance:none;}
+.select-input:focus,.date-input:focus{outline:none;border-color:var(--primary);}
+.turno-info{background:var(--primary-dim);border:1px solid var(--primary-border);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;display:none;}
+.turno-info.visible{display:block;}
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.stat-item{background:var(--surface2);border-radius:10px;padding:12px;text-align:center;}
+.stat-n{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;}
+.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+/* Lista alumnos */
+.search-bar{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;width:100%;font-size:14px;margin-bottom:12px;}
+.search-bar:focus{outline:none;border-color:var(--primary);}
+.alumno-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);}
+.alumno-row:last-child{border-bottom:none;}
+.alumno-nombre{font-size:14px;font-weight:500;}
+.alumno-info{font-size:11px;color:var(--muted);margin-top:2px;}
+.toggle-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.toggle-btn.presente{background:var(--primary);}
+.toggle-btn.presente::after{content:'✓';color:#fff;}
+.toggle-btn.ausente{background:var(--red-dim);border:1px solid var(--red-border);}
+.toggle-btn.ausente::after{content:'✗';color:var(--red);}
+.btn-guardar{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:13px;width:100%;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-guardar:disabled{opacity:.5;cursor:not-allowed;}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;}
+
+/* Historial */
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;}
+.hist-table th{background:var(--surface2);padding:8px 6px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap;}
+.hist-table th:first-child{text-align:left;padding-left:12px;}
+.hist-table td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);}
+.hist-table td:first-child{text-align:left;padding-left:12px;font-size:12px;}
+.pres-cell{color:#6de097;font-weight:700;}
+.ause-cell{color:var(--red);}
+.no-cell{color:var(--muted);}
+.hist-resumen{padding:10px 14px;background:var(--surface2);font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:center;}
+
+/* Perfil */
+.perfil-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.perfil-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;color:var(--secondary);}
+.perfil-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.perfil-row:last-child{border-bottom:none;}
+.perfil-row-label{font-size:12px;color:var(--muted);}
+.perfil-row-val{font-size:13px;font-weight:500;}
+.campo-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;font-family:'Barlow',sans-serif;margin-bottom:10px;}
+.campo-input:focus{outline:none;border-color:var(--primary);}
+.btn-perfil{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:11px 16px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;}
+.success-msg{background:var(--primary-dim);border:1px solid var(--primary-border);color:#6de097;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:10px;display:none;}
+.btn-bio-perfil{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:11px 16px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;}
+.btn-logout{background:var(--red-dim);border:1px solid var(--red-border);color:var(--red);border-radius:10px;padding:12px;width:100%;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;z-index:200;display:none;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:380px;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;margin-bottom:6px;}
+.modal-sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
+.modal-btns{display:flex;gap:10px;margin-top:16px;}
+
+/* Badge & Toast */
+#vbadge{position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;}
+#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;display:none;z-index:9999;white-space:nowrap;}
+#toast.ok{background:var(--primary);}
+#toast.err{background:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- Loader -->
+<div id="loader"><div class="spinner"></div><p id="loader-msg">Cargando...</p></div>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img id="login-logo-img" src="" alt="" onerror="this.style.display='none'" style="display:none;">
+      <h1 id="login-titulo">Cargando...</h1>
+      <p id="login-subtitulo">Portal de Personal</p>
+    </div>
+    <div class="login-card">
+      <div class="error-msg" id="login-error"></div>
+      <div class="field">
+        <label>DNI</label>
+        <input type="number" id="login-dni" placeholder="Tu número de DNI" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <div class="field-wrap">
+          <input type="password" id="login-pass" placeholder="Tu contraseña">
+          <button class="eye-btn" onclick="toggleEye('login-pass',this)">&#x1F441;</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">&#x2192; ENTRAR</button>
+      <button class="btn btn-bio" id="btnBioLogin" onclick="loginConHuella()" style="display:none;">&#x1F4F1; Entrar con huella / Face ID</button>
+      <button class="btn-link" onclick="abrirResetPass()">Olvidé mi contraseña</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cambio de contraseña obligatorio -->
+<div id="cambio-pass-screen">
+  <div class="cambio-box">
+    <div class="login-logo">
+      <h1>Cambiar contraseña</h1>
+      <p>Es tu primer ingreso. Elegí una nueva contraseña.</p>
+    </div>
+    <div class="login-card">
+      <div class="error-msg" id="cambio-error"></div>
+      <div class="field">
+        <label>Nueva contraseña</label>
+        <div class="field-wrap">
+          <input type="password" id="cambio-nueva" placeholder="Mínimo 6 caracteres">
+          <button class="eye-btn" onclick="toggleEye('cambio-nueva',this)">&#x1F441;</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="cambio-confirmar" placeholder="Repetir contraseña">
+      </div>
+      <button class="btn btn-primary" onclick="doForzarCambioPass()">GUARDAR Y ENTRAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- App principal -->
+<div id="app">
+  <div class="app-header">
+    <div class="app-header-left">
+      <img id="header-logo" src="" alt="" onerror="this.style.display='none'" style="display:none;">
+      <div>
+        <div class="prof-name" id="header-nombre">Personal</div>
+        <div class="prof-role" id="header-rol">Asistencias</div>
+      </div>
+    </div>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="irTab('perfil')" title="Mi perfil">&#x1F464;</button>
+      <button class="icon-btn" onclick="doLogout()" title="Salir">&#x2192;</button>
+    </div>
+  </div>
+
+  <div class="app-tabs">
+    <div class="app-tab active" id="tab-asist" onclick="irTab('asist')">&#x2713; Asistencia</div>
+    <div class="app-tab" id="tab-historial" onclick="irTab('historial')">&#x1F4CB; Historial</div>
+    <div class="app-tab" id="tab-perfil" onclick="irTab('perfil')">&#x1F464; Mi perfil</div>
+  </div>
+
+  <!-- Sección asistencia -->
+  <div class="app-section active" id="sec-asist">
+    <div class="asist-card">
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <div class="asist-card-label">Fecha</div>
+          <input type="date" id="asist-fecha" class="date-input" onchange="onCambioFecha()">
+        </div>
+      </div>
+      <div>
+        <div class="asist-card-label" id="lbl-turno">Turno</div>
+        <select id="asist-turno" class="select-input" onchange="onCambioTurno()">
+          <option value="">-- Elegir turno --</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="turno-info" id="turno-info"></div>
+
+    <div class="stats-bar" id="stats-bar" style="display:none;">
+      <div class="stat-item"><div class="stat-n" id="cnt-p" style="color:#6de097">0</div><div class="stat-l">Presentes</div></div>
+      <div class="stat-item"><div class="stat-n" id="cnt-a" style="color:var(--red)">0</div><div class="stat-l">Ausentes</div></div>
+      <div class="stat-item"><div class="stat-n" id="cnt-pct" style="color:var(--secondary)">0%</div><div class="stat-l">Asistencia</div></div>
+    </div>
+
+    <div id="lista-container" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:none;">
+      <div style="padding:12px;">
+        <input type="text" class="search-bar" id="asist-busq" placeholder="Buscar..." oninput="filtrarAlumnos()">
+      </div>
+      <div id="lista-alumnos"></div>
+      <div style="padding:12px;">
+        <button class="btn-guardar" id="btn-guardar" onclick="guardarAsistencia()">&#x1F4BE; GUARDAR ASISTENCIA</button>
+      </div>
+    </div>
+
+    <div class="empty-state" id="asist-empty">Elegí una fecha y un turno para tomar asistencia</div>
+  </div>
+
+  <!-- Sección historial -->
+  <div class="app-section" id="sec-historial">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:120px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-family:'Barlow Condensed',sans-serif;" id="lbl-hist-grupo">Grupo</div>
+        <select id="hist-cat" class="select-input" onchange="renderHistorial()"><option value="">Todos</option></select>
+      </div>
+      <div style="flex:1;min-width:110px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-family:'Barlow Condensed',sans-serif;">Desde</div>
+        <input type="date" id="hist-desde" class="date-input" onchange="renderHistorial()">
+      </div>
+      <div style="flex:1;min-width:110px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-family:'Barlow Condensed',sans-serif;">Hasta</div>
+        <input type="date" id="hist-hasta" class="date-input" onchange="renderHistorial()">
+      </div>
+    </div>
+    <div id="hist-tabla-wrap" style="overflow-x:auto;border-radius:12px;border:1px solid var(--border);display:none;">
+      <div id="hist-tabla"></div>
+    </div>
+    <div id="hist-empty" style="text-align:center;padding:40px;color:var(--muted);font-size:14px;">Sin datos de asistencia</div>
+  </div>
+
+  <!-- Sección perfil -->
+  <div class="app-section" id="sec-perfil">
+    <div class="perfil-card">
+      <div class="perfil-title">Mis datos</div>
+      <div class="perfil-row"><span class="perfil-row-label">Nombre</span><span class="perfil-row-val" id="perfil-nombre">-</span></div>
+      <div class="perfil-row"><span class="perfil-row-label">DNI</span><span class="perfil-row-val" id="perfil-dni">-</span></div>
+      <div class="perfil-row"><span class="perfil-row-label">Email</span><span class="perfil-row-val" id="perfil-email">-</span></div>
+    </div>
+
+    <div class="perfil-card">
+      <div class="perfil-title" id="perfil-turnos-titulo">Mis turnos</div>
+      <div id="perfil-turnos"><span style="color:var(--muted);font-size:13px;">Sin turnos asignados</span></div>
+    </div>
+
+    <div class="perfil-card">
+      <div class="perfil-title">Cambiar contraseña</div>
+      <div class="success-msg" id="pass-success">Contraseña actualizada correctamente</div>
+      <div class="error-msg" id="pass-error"></div>
+      <input type="password" class="campo-input" id="pass-actual" placeholder="Contraseña actual">
+      <input type="password" class="campo-input" id="pass-nueva" placeholder="Nueva contraseña (mín. 6 caracteres)">
+      <input type="password" class="campo-input" id="pass-confirmar" placeholder="Confirmar nueva contraseña">
+      <button class="btn-perfil" onclick="doCambiarPass()">CAMBIAR CONTRASEÑA</button>
+    </div>
+
+    <div class="perfil-card">
+      <div class="perfil-title">Acceso biométrico</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Usá tu huella o Face ID para entrar sin escribir la contraseña.</p>
+      <button class="btn-bio-perfil" id="btn-bio-perfil" onclick="toggleBiometrico()">Activar huella / Face ID</button>
+    </div>
+
+    <button class="btn-logout" onclick="doLogout()">&#x2192; Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- Modal reset password -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal">
+    <div class="modal-title">Recuperar contraseña</div>
+    <div class="modal-sub">Ingresá tu DNI y te enviamos una contraseña temporal a tu email registrado.</div>
+    <div class="error-msg" id="reset-error"></div>
+    <div class="field">
+      <label>DNI</label>
+      <input type="number" id="reset-dni" class="campo-input" placeholder="Tu DNI" inputmode="numeric">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" style="flex:1;" onclick="doResetPass()">ENVIAR</button>
+      <button class="btn" style="flex:1;background:var(--surface2);border:1px solid var(--border);" onclick="cerrarReset()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="vbadge">v2.0</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqCAMzkqw0hINhNOAxZKAxPElYKMESj33LJ-dxZ1h0Crg85M_L5EsXnYIWlmbv6uWd/exec';
+var WA_KEY     = 'sgd_personal_cred';
+var SESS_KEY   = 'sgd_personal_sess';
+
+// ── ESTADO ────────────────────────────────────────────────────────
+var PROF  = null; // {dni, nombre, email, token}
+var INST  = {};   // datos de la institución
+var DB    = {horarios:[], jugadores:[]};
+var asistencias  = [];
+var asistActual  = {};
+var turnoActual  = null;
+
+// ── COLUMNAS (igual que el admin) ─────────────────────────────────
+var COL = {APELLIDO:0,NOMBRE:1,EMAIL:2,DNI:8,FECHA_NAC:9,SEXO:10,ACTIVO:6,CATEGORIA_APP:17,PLAN:18,LIGA:22};
+
+// ── BRANDING DINÁMICO ─────────────────────────────────────────────
+function aplicarBranding(inst) {
+  INST = inst || {};
+  var p   = INST.colorPrimario  || '#1a7a3c';
+  var sec = INST.colorSecundario || '#c9a227';
+  var r = document.documentElement;
+  r.style.setProperty('--primary', p);
+  r.style.setProperty('--primary-dark', ajustarBrillo(p, -20));
+  r.style.setProperty('--secondary', sec);
+  r.style.setProperty('--primary-dim', hexToRgba(p, 0.15));
+  r.style.setProperty('--primary-border', hexToRgba(p, 0.4));
+
+  var nombre = INST.nombre || INST.nombreCorto || 'Sistema';
+  document.getElementById('page-title').innerText = nombre + ' - Personal';
+  document.getElementById('login-titulo').innerText = nombre;
+  document.getElementById('meta-theme').content = p;
+
+  var logo = INST.logoUrl || '';
+  var imgLogin  = document.getElementById('login-logo-img');
+  var imgHeader = document.getElementById('header-logo');
+  if (logo) {
+    imgLogin.src  = logo; imgLogin.style.display  = 'block';
+    imgHeader.src = logo; imgHeader.style.display = 'block';
+  }
+
+  // Terminología
+  var tGrupo  = INST.terminologiaGrupo  || 'Grupo';
+  var tGrupos = INST.terminologiaGrupos || 'Grupos';
+  document.getElementById('lbl-turno').innerText      = 'Turno';
+  document.getElementById('lbl-hist-grupo').innerText = tGrupos;
+}
+
+function hexToRgba(hex, alpha) {
+  var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+alpha+')';
+}
+function ajustarBrillo(hex, amt) {
+  var r=Math.max(0,Math.min(255,parseInt(hex.slice(1,3),16)+amt));
+  var g=Math.max(0,Math.min(255,parseInt(hex.slice(3,5),16)+amt));
+  var b=Math.max(0,Math.min(255,parseInt(hex.slice(5,7),16)+amt));
+  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────
+function fmtHora(h) {
+  if (!h) return '';
+  var s = h.toString();
+  if (s.includes('T') || s.includes('1899')) {
+    try {
+      var d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        var hh = d.getUTCHours(), mm = d.getUTCMinutes();
+        return hh + (mm > 0 ? ':' + String(mm).padStart(2,'0') : '');
+      }
+    } catch(e) {}
+  }
+  return s.replace('hs','').trim();
+}
+
+function mostrarLoader(msg){ document.getElementById('loader').classList.remove('hidden'); document.getElementById('loader-msg').innerText = msg||'Cargando...'; }
+function ocultarLoader(){ document.getElementById('loader').classList.add('hidden'); }
+
+function toast(msg, tipo){
+  var el = document.getElementById('toast');
+  el.innerText = msg; el.className = tipo||''; el.style.display = 'block';
+  setTimeout(function(){ el.style.display='none'; }, 2800);
+}
+
+function toggleEye(inputId, btn){
+  var inp = document.getElementById(inputId);
+  if(inp.type==='password'){ inp.type='text'; btn.innerHTML='&#x1F648;'; }
+  else { inp.type='password'; btn.innerHTML='&#x1F441;'; }
+}
+
+function callAPI(action, data, cb, cbErr){
+  var url = SCRIPT_URL + '?action=' + action + '&data=' + encodeURIComponent(JSON.stringify(data));
+  fetch(url, {method:'GET', redirect:'follow'})
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      var d; try{ d=JSON.parse(t); }catch(e){ d={raw:t}; }
+      if(d && d.error){ if(cbErr) cbErr(d.error); else toast(d.error,'err'); }
+      else { if(cb) cb(d); }
+    })
+    .catch(function(e){ if(cbErr) cbErr('Sin conexión'); else toast('Sin conexión','err'); });
+}
+
+// ── SESIÓN ────────────────────────────────────────────────────────
+function guardarSesion(prof){ PROF = prof; localStorage.setItem(SESS_KEY, JSON.stringify(prof)); }
+function cargarSesion(){
+  try {
+    var s = localStorage.getItem(SESS_KEY); if(!s) return null;
+    var p = JSON.parse(s);
+    var parts = (p.token||'').split('_'); var ts = parseInt(parts[1]);
+    if(isNaN(ts) || (Date.now()-ts) > 8*60*60*1000) return null;
+    return p;
+  } catch(e){ return null; }
+}
+function limpiarSesion(){ PROF = null; localStorage.removeItem(SESS_KEY); }
+
+// ── BIOMETRICO ────────────────────────────────────────────────────
+function hayHuella(){ return !!localStorage.getItem(WA_KEY); }
+
+async function registrarHuella(pass){
+  if(!window.PublicKeyCredential){ toast('Tu dispositivo no soporta biometría','err'); return; }
+  try {
+    var chall = new Uint8Array(32); crypto.getRandomValues(chall);
+    var uid = new TextEncoder().encode(PROF.dni);
+    var cred = await navigator.credentials.create({publicKey:{
+      challenge: chall,
+      rp: {name: INST.nombre || 'SGD'},
+      user: {id:uid, name:PROF.dni, displayName:PROF.nombre},
+      pubKeyCredParams: [{alg:-7,type:'public-key'}],
+      authenticatorSelection: {authenticatorAttachment:'platform', userVerification:'required'},
+      timeout: 60000
+    }});
+    localStorage.setItem(WA_KEY, JSON.stringify({
+      credId: btoa(String.fromCharCode(...new Uint8Array(cred.rawId))),
+      dni: PROF.dni, pass: pass
+    }));
+    toast('Huella registrada correctamente','ok');
+    actualizarBtnBio();
+  } catch(e){ toast('No se pudo registrar la huella','err'); }
+}
+
+async function loginConHuella(){
+  var data = null; try{ data = JSON.parse(localStorage.getItem(WA_KEY)); }catch(e){}
+  if(!data){ toast('No hay huella registrada','err'); return; }
+  try {
+    var chall = new Uint8Array(32); crypto.getRandomValues(chall);
+    var credId = Uint8Array.from(atob(data.credId), function(c){ return c.charCodeAt(0); });
+    await navigator.credentials.get({publicKey:{
+      challenge: chall,
+      allowCredentials: [{type:'public-key', id:credId, transports:['internal']}],
+      userVerification: 'required', timeout: 60000
+    }});
+    document.getElementById('login-dni').value = data.dni;
+    document.getElementById('login-pass').value = data.pass;
+    doLogin();
+  } catch(e){ toast('No se pudo verificar la huella','err'); }
+}
+
+function olvidarHuella(){ localStorage.removeItem(WA_KEY); toast('Huella eliminada','ok'); actualizarBtnBio(); }
+
+function actualizarBtnBio(){
+  var btnLogin  = document.getElementById('btnBioLogin');
+  var btnPerfil = document.getElementById('btn-bio-perfil');
+  if(hayHuella()){
+    if(btnLogin)  btnLogin.style.display='flex';
+    if(btnPerfil) btnPerfil.innerText='Desactivar huella / Face ID';
+  } else {
+    if(btnLogin)  btnLogin.style.display='none';
+    if(btnPerfil) btnPerfil.innerText='Activar huella / Face ID';
+  }
+}
+
+function toggleBiometrico(){
+  if(hayHuella()){ olvidarHuella(); }
+  else {
+    var pass = document.getElementById('pass-actual').value || prompt('Ingresá tu contraseña para activar la huella:');
+    if(pass) registrarHuella(pass);
+  }
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────
+function doLogin(){
+  var dni  = document.getElementById('login-dni').value.trim();
+  var pass = document.getElementById('login-pass').value.trim();
+  var errEl = document.getElementById('login-error');
+  errEl.style.display='none';
+  if(!dni||!pass){ errEl.innerText='Completá todos los campos'; errEl.style.display='block'; return; }
+
+  mostrarLoader('Verificando...');
+  callAPI('loginPersonal', {dni:dni, pass:pass}, function(r){
+    ocultarLoader();
+    if(!r.ok){ errEl.innerText=r.error||'Error al ingresar'; errEl.style.display='block'; return; }
+    guardarSesion({dni:dni, nombre:r.nombre, email:r.email, token:r.token});
+    if(r.esPrimerLogin){
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('cambio-pass-screen').classList.add('visible');
+    } else {
+      entrarApp(pass);
+    }
+  }, function(e){
+    ocultarLoader(); errEl.innerText=e||'Error de conexión'; errEl.style.display='block';
+  });
+}
+
+function doForzarCambioPass(){
+  var nueva = document.getElementById('cambio-nueva').value.trim();
+  var conf  = document.getElementById('cambio-confirmar').value.trim();
+  var errEl = document.getElementById('cambio-error'); errEl.style.display='none';
+  if(nueva.length<6){ errEl.innerText='Mínimo 6 caracteres'; errEl.style.display='block'; return; }
+  if(nueva!==conf){ errEl.innerText='Las contraseñas no coinciden'; errEl.style.display='block'; return; }
+  mostrarLoader('Guardando...');
+  callAPI('cambiarPassPersonal', {dni:PROF.dni, token:PROF.token, passActual:PROF.dni, passNueva:nueva}, function(r){
+    ocultarLoader();
+    if(!r.ok){ errEl.innerText=r.error||'Error'; errEl.style.display='block'; return; }
+    document.getElementById('cambio-pass-screen').classList.remove('visible');
+    entrarApp(nueva);
+  }, function(e){ ocultarLoader(); errEl.innerText=e; errEl.style.display='block'; });
+}
+
+function entrarApp(pass){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  if(!hayHuella() && window.PublicKeyCredential && pass){
+    setTimeout(function(){
+      if(confirm('¿Querés activar el acceso con huella o Face ID?')){ registrarHuella(pass); }
+    }, 800);
+  }
+  cargarDatos();
+  actualizarBtnBio();
+  iniciarFecha();
+}
+
+function doLogout(){
+  if(!confirm('¿Cerrar sesión?')) return;
+  limpiarSesion();
+  DB = {horarios:[], jugadores:[]};
+  asistencias = [];
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').style.display='none';
+}
+
+// ── RESET PASS ────────────────────────────────────────────────────
+function abrirResetPass(){ document.getElementById('modal-reset').classList.add('open'); }
+function cerrarReset(){ document.getElementById('modal-reset').classList.remove('open'); }
+function doResetPass(){
+  var dni = document.getElementById('reset-dni').value.trim();
+  var errEl = document.getElementById('reset-error'); errEl.style.display='none';
+  if(!dni){ errEl.innerText='Ingresá tu DNI'; errEl.style.display='block'; return; }
+  mostrarLoader('Enviando...');
+  callAPI('resetPassPersonal', {dni:dni}, function(r){
+    ocultarLoader(); cerrarReset(); toast('Contraseña temporal enviada a tu email','ok');
+  }, function(e){ ocultarLoader(); errEl.innerText=e; errEl.style.display='block'; });
+}
+
+// ── CARGAR DATOS ──────────────────────────────────────────────────
+function cargarDatos(){
+  mostrarLoader('Cargando datos...');
+  callAPI('getDataPersonal', {dni:PROF.dni, token:PROF.token}, function(r){
+    ocultarLoader();
+    if(r.error){ toast(r.error,'err'); return; }
+    DB.horarios  = r.horarios  || [];
+    DB.jugadores = r.jugadores || [[]];
+    asistencias  = r.asistencias || [];
+
+    // Aplicar branding desde la institución
+    if (r.institucion) aplicarBranding(r.institucion);
+
+    document.getElementById('header-nombre').innerText = r.nombre || PROF.nombre;
+    document.getElementById('perfil-nombre').innerText = r.nombre || PROF.nombre;
+    document.getElementById('perfil-dni').innerText    = PROF.dni;
+    document.getElementById('perfil-email').innerText  = r.email  || PROF.email || '-';
+    renderTurnosPerfil();
+  }, function(e){ ocultarLoader(); toast(e,'err'); });
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+function irTab(tab){
+  document.querySelectorAll('.app-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.app-section').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('sec-'+tab).classList.add('active');
+  if(tab==='historial') iniciarHistorial();
+}
+
+// ── ASISTENCIAS ───────────────────────────────────────────────────
+function iniciarFecha(){
+  var hoy = new Date();
+  var val = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+  document.getElementById('asist-fecha').value = val;
+  poblarTurnos();
+}
+
+function poblarTurnos(){
+  var fecha = document.getElementById('asist-fecha').value;
+  var sel = document.getElementById('asist-turno');
+  var diasSemana = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+  var diaFecha = fecha ? diasSemana[new Date(fecha+'T12:00:00').getDay()] : '';
+  sel.innerHTML = '<option value="">-- Elegir turno --</option>';
+  var count = 0;
+  DB.horarios.forEach(function(h, i){
+    if(diaFecha && (h.dia||'').trim().toLowerCase() !== diaFecha.toLowerCase()) return;
+    var grupoLabel = h.grupo || h.categoria || '';
+    var extraLabel = h.extra && h.extra !== 'Ambas' ? ' ['+h.extra+']' : '';
+    sel.innerHTML += '<option value="'+i+'">'+fmtHora(h.hora)+'hs - '+grupoLabel+extraLabel+'</option>';
+    count++;
+  });
+  if(diaFecha && count===0){
+    sel.innerHTML = '<option value="">Sin turnos para este día</option>';
+  }
+  ocultarLista();
+}
+
+function onCambioFecha(){ poblarTurnos(); document.getElementById('asist-turno').value=''; ocultarLista(); }
+
+function onCambioTurno(){
+  var idx = document.getElementById('asist-turno').value;
+  if(idx==='') { ocultarLista(); return; }
+  turnoActual = DB.horarios[parseInt(idx)];
+  cargarLista(turnoActual);
+}
+
+function ocultarLista(){
+  document.getElementById('lista-container').style.display='none';
+  document.getElementById('stats-bar').style.display='none';
+  document.getElementById('turno-info').classList.remove('visible');
+  document.getElementById('asist-empty').style.display='block';
+  turnoActual = null; asistActual = {};
+}
+
+function cargarLista(h){
+  var fecha   = document.getElementById('asist-fecha').value;
+  var grupoKey = h.grupo || h.categoria || '';
+  var turnoId = fecha+'_T'+DB.horarios.indexOf(h)+'_'+grupoKey;
+
+  var jug = DB.jugadores.slice(1).filter(function(f){
+    if(!f||!f.length) return false;
+    var activo = f[COL.ACTIVO];
+    if(!(activo===true||String(activo).toLowerCase()==='si')) return false;
+    return (f[COL.CATEGORIA_APP] || '') === grupoKey;
+  });
+
+  // Cargar asistencias previas
+  asistActual = {}; var tieneRegistro = false;
+  asistencias.forEach(function(r){
+    if(r[1]===turnoId){
+      tieneRegistro = true;
+      var v = r[5]; var vStr = String(v).toLowerCase().trim();
+      asistActual[r[3].toString()] = (v===true || vStr==='true' || vStr==='si');
+    }
+  });
+  if(!tieneRegistro){ jug.forEach(function(f){ asistActual[(f[COL.DNI]||'').toString()] = true; }); }
+
+  var ff = new Date(fecha+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  var aviso = tieneRegistro
+    ? '<div style="margin-top:8px;padding:7px 10px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:7px;font-size:12px;color:var(--secondary);">&#x26A0; Ya tiene asistencia cargada. Podés modificarla y guardar de nuevo.</div>'
+    : '';
+  var infoEl = document.getElementById('turno-info');
+  infoEl.innerHTML = '<b>'+fmtHora(h.hora)+'hs - '+grupoKey+'</b> &bull; '+ff+(h.sede?' &bull; '+h.sede:'')+aviso;
+  infoEl.classList.add('visible');
+
+  renderLista(jug, turnoId);
+  document.getElementById('asist-empty').style.display='none';
+  document.getElementById('lista-container').style.display='block';
+  document.getElementById('stats-bar').style.display='grid';
+  actualizarStats(jug.length);
+  window._turnoId    = turnoId;
+  window._turnoLabel = fmtHora(h.hora)+'hs - '+grupoKey;
+  window._jugActual  = jug;
+}
+
+function renderLista(jug, turnoId){
+  var html = '';
+  jug.forEach(function(f){
+    var dni = (f[COL.DNI]||'').toString();
+    var presente = !(asistActual[dni]===false);
+    var anio = f[COL.FECHA_NAC] ? (''+f[COL.FECHA_NAC]).slice(-4)||'' : '';
+    html += '<div class="alumno-row" data-nombre="'+(f[COL.APELLIDO]||'').toLowerCase()+' '+(f[COL.NOMBRE]||'').toLowerCase()+'">'
+      + '<div><div class="alumno-nombre">'+(f[COL.APELLIDO]||'')+', '+(f[COL.NOMBRE]||'')+'</div>'
+      + '<div class="alumno-info">DNI: '+dni+(anio?' | Nac. '+anio:'')+'</div></div>'
+      + '<button class="toggle-btn '+(presente?'presente':'ausente')+'" data-dni="'+dni+'" onclick="toggleAlumno(this)"></button>'
+      + '</div>';
+  });
+  document.getElementById('lista-alumnos').innerHTML = html || '<div class="empty-state">Sin registros en este grupo</div>';
+  actualizarStats(jug.length);
+}
+
+function toggleAlumno(btn){
+  var dni = btn.dataset.dni; var ahora = btn.classList.contains('presente');
+  if(ahora){ btn.classList.remove('presente'); btn.classList.add('ausente'); asistActual[dni]=false; }
+  else { btn.classList.remove('ausente'); btn.classList.add('presente'); asistActual[dni]=true; }
+  actualizarStats(window._jugActual ? window._jugActual.length : 0);
+}
+
+function actualizarStats(total){
+  var pres = Object.values(asistActual).filter(function(v){ return v; }).length;
+  document.getElementById('cnt-p').innerText   = pres;
+  document.getElementById('cnt-a').innerText   = total - pres;
+  document.getElementById('cnt-pct').innerText = total>0 ? Math.round(pres/total*100)+'%' : '0%';
+}
+
+function filtrarAlumnos(){
+  var q = document.getElementById('asist-busq').value.toLowerCase();
+  document.querySelectorAll('.alumno-row').forEach(function(row){ row.style.display = row.dataset.nombre.includes(q) ? '' : 'none'; });
+}
+
+function guardarAsistencia(){
+  if(!window._turnoId || !window._jugActual) return;
+  var fecha = document.getElementById('asist-fecha').value;
+  var registros = window._jugActual.map(function(f){
+    var dni = (f[COL.DNI]||'').toString();
+    return [fecha, window._turnoId, window._turnoLabel, dni,
+            (f[COL.APELLIDO]||'')+' '+(f[COL.NOMBRE]||''),
+            asistActual[dni]!==false ? 'Si' : 'No', 'Hoja 1'];
+  });
+  var btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.innerText = 'Guardando...';
+  mostrarLoader('Guardando asistencia...');
+  callAPI('guardarAsistenciaPersonal', {dni:PROF.dni, token:PROF.token, registros:registros}, function(r){
+    ocultarLoader(); btn.disabled=false; btn.innerHTML='&#x1F4BE; GUARDAR ASISTENCIA';
+    if(!r.ok){ toast(r.error||'Error al guardar','err'); return; }
+    asistencias = asistencias.filter(function(r){ return r[1]!==window._turnoId; }).concat(registros);
+    toast('Asistencia guardada correctamente','ok');
+  }, function(e){ ocultarLoader(); btn.disabled=false; btn.innerHTML='&#x1F4BE; GUARDAR ASISTENCIA'; toast(e,'err'); });
+}
+
+// ── PERFIL ────────────────────────────────────────────────────────
+function renderTurnosPerfil(){
+  var el = document.getElementById('perfil-turnos');
+  if(!DB.horarios.length){ el.innerHTML='<span style="color:var(--muted);font-size:13px;">Sin turnos asignados</span>'; return; }
+  var tGrupo = INST.terminologiaGrupo || 'Grupo';
+  el.innerHTML = DB.horarios.map(function(h){
+    var grupoKey = h.grupo || h.categoria || '';
+    var extra = h.extra && h.extra !== 'Ambas' ? ' <span style="color:var(--secondary);font-size:11px;">['+h.extra+']</span>' : '';
+    var sede = h.sede ? ' <span style="color:var(--muted);">('+h.sede+')</span>' : '';
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">'
+      + '<b>'+h.dia+'</b> '+fmtHora(h.hora)+'hs &mdash; '+grupoKey+extra+sede+'</div>';
+  }).join('');
+}
+
+function doCambiarPass(){
+  var actual    = document.getElementById('pass-actual').value.trim();
+  var nueva     = document.getElementById('pass-nueva').value.trim();
+  var confirmar = document.getElementById('pass-confirmar').value.trim();
+  var errEl = document.getElementById('pass-error'), succEl = document.getElementById('pass-success');
+  errEl.style.display='none'; succEl.style.display='none';
+  if(!actual||!nueva||!confirmar){ errEl.innerText='Completá todos los campos'; errEl.style.display='block'; return; }
+  if(nueva.length<6){ errEl.innerText='Mínimo 6 caracteres'; errEl.style.display='block'; return; }
+  if(nueva!==confirmar){ errEl.innerText='Las contraseñas no coinciden'; errEl.style.display='block'; return; }
+  mostrarLoader('Actualizando...');
+  callAPI('cambiarPassPersonal', {dni:PROF.dni, token:PROF.token, passActual:actual, passNueva:nueva}, function(r){
+    ocultarLoader();
+    if(!r.ok){ errEl.innerText=r.error||'Error'; errEl.style.display='block'; return; }
+    document.getElementById('pass-actual').value='';
+    document.getElementById('pass-nueva').value='';
+    document.getElementById('pass-confirmar').value='';
+    succEl.style.display='block';
+    setTimeout(function(){ succEl.style.display='none'; }, 3000);
+  }, function(e){ ocultarLoader(); errEl.innerText=e; errEl.style.display='block'; });
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────────
+function iniciarHistorial(){
+  var sel = document.getElementById('hist-cat');
+  sel.innerHTML = '<option value="">Todos</option>';
+  var cats = [];
+  DB.horarios.forEach(function(h){ var g=h.grupo||h.categoria||''; if(g&&cats.indexOf(g)<0) cats.push(g); });
+  cats.forEach(function(c){ sel.innerHTML += '<option value="'+c+'">'+c+'</option>'; });
+  var hoy = new Date(), desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  var dEl = document.getElementById('hist-desde'), hEl = document.getElementById('hist-hasta');
+  if(!dEl.value) dEl.value = desde.toISOString().split('T')[0];
+  if(!hEl.value) hEl.value = hoy.toISOString().split('T')[0];
+  renderHistorial();
+}
+
+function renderHistorial(){
+  var catF  = document.getElementById('hist-cat').value;
+  var desde = document.getElementById('hist-desde').value;
+  var hasta = document.getElementById('hist-hasta').value;
+  var misCats = DB.horarios.map(function(h){ var g=h.grupo||h.categoria||''; return g; }).filter(function(c,i,a){ return c&&a.indexOf(c)===i; });
+  var jug = DB.jugadores.slice(1).filter(function(f){
+    if(!f||!f.length) return false;
+    var activo=f[COL.ACTIVO]; if(!(activo===true||String(activo).toLowerCase()==='si')) return false;
+    var cat=f[COL.CATEGORIA_APP]; if(misCats.indexOf(cat)<0) return false;
+    if(catF&&cat!==catF) return false;
+    return true;
+  });
+  var turnosMap = {};
+  asistencias.forEach(function(r){
+    var fecha=r[0]||''; if(desde&&fecha<desde) return; if(hasta&&fecha>hasta) return;
+    var tid=r[1]||'', partes=tid.split('_'), cat=partes.length>2?partes.slice(2).join('_'):'';
+    if(catF&&cat!==catF) return; if(misCats.length&&misCats.indexOf(cat)<0) return;
+    if(!turnosMap[tid]) turnosMap[tid]={fecha:fecha,label:r[2]||'',cat:cat,turnoId:tid};
+  });
+  var turnos = Object.values(turnosMap).sort(function(a,b){ return a.fecha.localeCompare(b.fecha); });
+  var emptyEl=document.getElementById('hist-empty'), wrapEl=document.getElementById('hist-tabla-wrap');
+  if(!jug.length||!turnos.length){
+    wrapEl.style.display='none'; emptyEl.style.display='block';
+    emptyEl.innerText = !jug.length ? 'Sin registros en este grupo' : 'Sin registros en el período';
+    return;
+  }
+  wrapEl.style.display='block'; emptyEl.style.display='none';
+  var asistMap={};
+  asistencias.forEach(function(r){
+    var fecha=r[0]||''; if(desde&&fecha<desde) return; if(hasta&&fecha>hasta) return;
+    var dni=r[3]||'',tid=r[1]||''; if(!asistMap[dni]) asistMap[dni]={};
+    asistMap[dni][tid]=(r[5]===true||String(r[5]).toLowerCase()==='si'||r[5]==='Si');
+  });
+  var html='<table class="hist-table"><thead><tr><th>Nombre</th>';
+  turnos.forEach(function(t){
+    var d=new Date(t.fecha+'T12:00:00'), dia=d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+    var lbl=t.label?t.label.split(' - ')[0]:'';
+    html+='<th><div>'+dia+'</div><div style="font-size:10px;color:var(--primary);">'+lbl+'</div></th>';
+  });
+  html+='<th>%</th></tr></thead><tbody>';
+  jug.forEach(function(f){
+    var dni=(f[COL.DNI]||'').toString(), nombre=(f[COL.APELLIDO]||'')+', '+(f[COL.NOMBRE]||'');
+    var pres=0, tot=0;
+    html+='<tr><td title="DNI: '+dni+'">'+nombre+'</td>';
+    turnos.forEach(function(t){
+      var jA=asistMap[dni]||{};
+      if(t.turnoId in jA){ tot++; if(jA[t.turnoId]){pres++;html+='<td class="pres-cell">&#x2713;</td>';} else html+='<td class="ause-cell">&#x2717;</td>'; }
+      else html+='<td class="no-cell">-</td>';
+    });
+    var pct=tot>0?Math.round(pres/tot*100):null;
+    var col=pct===null?'var(--muted)':pct>=75?'#6de097':pct>=50?'var(--secondary)':'var(--red)';
+    html+='<td style="font-weight:700;color:'+col+';">'+(pct!==null?pct+'%':'-')+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  var totP=0,totR=0;
+  jug.forEach(function(f){var dni=(f[COL.DNI]||'').toString();var jA=asistMap[dni]||{};turnos.forEach(function(t){if(t.turnoId in jA){totR++;if(jA[t.turnoId])totP++;}});});
+  var pG=totR>0?Math.round(totP/totR*100):0;
+  html+='<div class="hist-resumen"><span>'+jug.length+' registros</span><span>&bull;</span><span>'+turnos.length+' clases</span><span>&bull;</span><span>Global: <b style="color:var(--secondary);">'+pG+'%</b></span></div>';
+  document.getElementById('hist-tabla').innerHTML=html;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+// Service Worker (path relativo, el cliente lo configura)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(function(){ console.log('SW registrado'); })
+    .catch(function(e){ console.log('SW:', e); });
+}
+
+window.onload = function(){
+  actualizarBtnBio();
+  var sess = cargarSesion();
+  if(sess){
+    PROF = sess;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    cargarDatos();
+    actualizarBtnBio();
+    iniciarFecha();
+  } else {
+    // Cargar branding incluso en pantalla de login
+    callAPI('getInstitucion', {}, function(r){
+      ocultarLoader();
+      if(r && r.ok && r.data) aplicarBranding(r.data);
+    }, function(){ ocultarLoader(); });
+  }
+};
+</script>
+</body>
+</html>
