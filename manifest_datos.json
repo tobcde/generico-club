@@ -3,7 +3,7 @@
   "short_name": "SGD Registro",
   "description": "Autoregistro de socios con DNI y consulta de estado",
   "start_url": "/generico-club/datos.html",
-  "scope": "/generico-club/",
+  "scope": "/generico-club/datos.html",
   "display": "standalone",
   "background_color": "#1a0a00",
   "theme_color": "#f97316",
