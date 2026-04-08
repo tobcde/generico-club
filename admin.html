@@ -774,7 +774,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.6</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.8</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -789,7 +789,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUt_Js9-OWDx1Trzi4Omn12jCUn9FrzwuiUUV9V5fRU_xJbRdzp8TcEBRtW2XceXXw6g/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnPXwGH8EaBZngXFKpFgAqHwRFm-04RYHOW7zxMNh9kGjZQqYLIl7cRtO-Wj9BxeOx0A/exec';
                   
                   
 // ---------------------------------------------------------------
@@ -996,12 +996,13 @@ function inicializar() {
       if (r && r.cuotas) {
         r.cuotas = r.cuotas.map(function(c) {
           // Detectar si viene de Sheets: c[3] es num&eacute;rico (DNI) y c[0] es string tipo "abril 2026"
-          var esDeSheets = c.length <= 9 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
+          var esDeSheets = c.length <= 10 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
           if (esDeSheets) {
-            // Sheets: [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs, PeriodoHasta]
-            // -> [DNI, Nombre, Concepto, Hasta, Hasta, FechaPago, Monto, Metodo, '', Obs]
+            // Sheets: [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs, PeriodoHasta, Saldo]
+            // -> [DNI, Nombre, Concepto, Hasta, Hasta, FechaPago, Monto, Metodo, '', Obs, Saldo]
             var hasta = c[8] || c[1]; // col I = periodoHasta, fallback a fecha de pago
-            return [c[3], c[4], c[2], hasta, hasta, c[1], c[5], c[6], '', c[7]||''];
+            var saldoRow = (c[9] !== undefined && c[9] !== '') ? parseFloat(c[9]) : null;
+            return [c[3], c[4], c[2], hasta, hasta, c[1], c[5], c[6], '', c[7]||'', saldoRow];
           }
           return c;
         });
@@ -1051,34 +1052,51 @@ function getFechaVenc(p){ var v = new Date(getFechaHasta(p)); v.setDate(v.getDat
 
 function estadoCuotaV2(f) {
   var planNom = getPlanJ(f);
-  if(!planNom) return {estado:'none', hasta:null, deuda:0, deudaActividad:0, deudaSocial:0, planNom:null, planMonto:0};
+  if(!planNom) return {estado:'none', hasta:null, deuda:0, saldoAFavor:0, deudaActividad:0, deudaSocial:0, planNom:null, planMonto:0};
   var planObj = getPlanObj(planNom);
   var planMonto = planObj ? Number(planObj[1])||0 : 0;
   var hoy = new Date(); hoy.setHours(0,0,0,0);
   var dni = (f[COL.DNI]||'').toString();
   var pagos = CUOTAS_DB.cuotas.filter(function(c){ return c[0] == dni; });
+
+  // Buscar el pago vigente mas reciente (para saber hasta cu&aacute;ndo est&aacute; cubierto)
   var mejor = null;
   pagos.forEach(function(c){
     var hasta = parseDate(c[4]);
     if(hasta && hasta >= hoy){ if(!mejor || hasta > parseDate(mejor[4])) mejor = c; }
   });
-  var deudaActividad = planMonto;
-  var hastaActividad = null;
-  if(mejor){
-    hastaActividad = parseDate(mejor[4]);
+  var hastaActividad = mejor ? parseDate(mejor[4]) : null;
+
+  // Calcular saldo neto acumulado sumando col Saldo (&iacute;ndice 10) de todos los pagos
+  // Si no hay col Saldo, fallback al m&eacute;todo anterior
+  var tieneSaldo = pagos.some(function(c){ return c[10] !== undefined && c[10] !== null; });
+  var saldoNeto = 0;
+  if(tieneSaldo) {
+    pagos.forEach(function(c){
+      if(c[10] !== undefined && c[10] !== null) saldoNeto += Number(c[10]) || 0;
+    });
+  } else if(mejor) {
+    // fallback: monto pagado vs plan
     var montoPagado = Number(mejor[6])||0;
-    deudaActividad = planMonto > 0 && montoPagado < planMonto ? planMonto - montoPagado : 0;
+    saldoNeto = montoPagado - planMonto;
   }
+
+  // saldoNeto > 0 = a favor, saldoNeto < 0 = debe
+  var deudaActividad = saldoNeto >= 0 ? 0 : Math.abs(saldoNeto);
+  var saldoAFavor    = saldoNeto > 0  ? saldoNeto : 0;
+
   var estado;
-  if(deudaActividad === 0){
+  if(deudaActividad === 0 && (mejor || saldoAFavor > 0)) {
     var dias7 = new Date(hoy); dias7.setDate(dias7.getDate() + 7);
     estado = hastaActividad && hastaActividad <= dias7 ? 'vence' : 'ok';
-  } else if(deudaActividad === planMonto){
+  } else if(deudaActividad > 0 && deudaActividad >= planMonto) {
     estado = 'debe';
-  } else {
+  } else if(deudaActividad > 0) {
     estado = 'parcial';
+  } else {
+    estado = hastaActividad ? 'ok' : 'debe';
   }
-  return {estado:estado, hasta:hastaActividad, deuda:deudaActividad, deudaActividad:deudaActividad, deudaSocial:0, planNom:planNom, planMonto:planMonto};
+  return {estado:estado, hasta:hastaActividad, deuda:deudaActividad, saldoAFavor:saldoAFavor, deudaActividad:deudaActividad, deudaSocial:0, planNom:planNom, planMonto:planMonto, saldoNeto:saldoNeto};
 }
 
 function getPlanJ(f){ return (f[COL.PLAN]||'').toString().trim(); }
@@ -1124,6 +1142,7 @@ function renderPlayers() {
     if(est==='ok'||est==='vence'){
       lb = (est==='vence' ? 'POR VENCER' : 'Al dia');
       if(cv.hasta) lb += ' ' + formatDate(cv.hasta);
+      if(cv.saldoAFavor > 0) lb += ' (+$' + Number(cv.saldoAFavor).toLocaleString('es-AR') + ')';
     } else if(est==='debe'){
       lb = 'DEBE $' + Number(cv.deuda).toLocaleString('es-AR');
     } else if(est==='parcial'){
@@ -1239,12 +1258,21 @@ function abrirModalPago(dni, nom, pl, hoja, mo, plSoc, moSoc) {
   var _dniStr = dni.toString().trim();
   var _fJug = DB.jugadores.slice(1).find(function(f){ return (f[COL.DNI]||f[COL.TARJETA]||'').toString().trim() === _dniStr; });
   pagoCtx = {dni:dni, nombre:nom, planNom:pl, hoja:hoja, f:_fJug};
-  document.getElementById('mp-sub').innerText = nom + (pl ? ' - ' + pl : '');
+  // Mostrar saldo previo del socio
+  var _cv = _fJug ? estadoCuotaV2(_fJug) : null;
+  var _saldoInfo = '';
+  if(_cv && _cv.saldoAFavor > 0) {
+    _saldoInfo = ' &mdash; <span style="color:#6de097;font-size:11px;">+$' + Number(_cv.saldoAFavor).toLocaleString('es-AR') + ' a favor</span>';
+  } else if(_cv && _cv.deudaActividad > 0) {
+    _saldoInfo = ' &mdash; <span style="color:var(--red);font-size:11px;">Debe $' + Number(_cv.deudaActividad).toLocaleString('es-AR') + '</span>';
+  }
+  document.getElementById('mp-sub').innerHTML = nom + (pl ? ' - ' + pl : '') + _saldoInfo;
+  var _moSugerido = mo || (_cv && _cv.planMonto > 0 ? _cv.planMonto : '');
   var now = new Date();
   document.getElementById('mp-fecha').value = now.toISOString().split('T')[0];
   document.getElementById('mp-desde').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   document.getElementById('mp-hasta').value = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
-  document.getElementById('mp-monto').value = mo || '';
+  document.getElementById('mp-monto').value = _moSugerido || '';
   document.getElementById('mp-obs').value = '';
   document.getElementById('mp-cobrador').innerHTML = DB.profesores.map(function(p){ return '<option>' + p[0] + '</option>'; }).join('') || '<option>Sin especificar</option>';
   document.getElementById('modalPago').classList.add('open');
@@ -1556,8 +1584,14 @@ function abrirM(ai) {
   var ecHtml = '';
   if(cv.planNom){
     ecHtml += '<div style="margin-bottom:8px;"><span style="font-size:10px;color:var(--muted);text-transform:uppercase;">Plan</span><br>';
-    if(cv.deudaActividad === 0){ ecHtml += '<span style="color:#6de097;font-weight:700;">AL DIA</span>' + (cv.hasta ? ' hasta <strong>' + formatDate(cv.hasta) + '</strong>' : ''); }
-    else { ecHtml += '<span style="color:var(--red);font-weight:700;">DEBE $' + Number(cv.deudaActividad).toLocaleString('es-AR') + '</span>'; }
+    if(cv.deudaActividad === 0){
+      ecHtml += '<span style="color:#6de097;font-weight:700;">AL DIA</span>' + (cv.hasta ? ' hasta <strong>' + formatDate(cv.hasta) + '</strong>' : '');
+      if(cv.saldoAFavor > 0){
+        ecHtml += ' &nbsp;<span style="background:rgba(26,122,60,.25);color:#6de097;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700;">+$' + Number(cv.saldoAFavor).toLocaleString('es-AR') + ' a favor</span>';
+      }
+    } else {
+      ecHtml += '<span style="color:var(--red);font-weight:700;">DEBE $' + Number(cv.deudaActividad).toLocaleString('es-AR') + '</span>';
+    }
     ecHtml += ' <small style="color:var(--muted);">(' + cv.planNom + ')</small></div>';
   } else { ecHtml = '<span style="color:var(--muted);">Sin plan asignado</span>'; }
   document.getElementById('m-estado-cuota').innerHTML = ecHtml;
@@ -2491,6 +2525,6 @@ window.onload = function() {
   }
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.7</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.8</div>
 </body>
 </ht
