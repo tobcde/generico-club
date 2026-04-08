@@ -762,7 +762,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwpsC2CUygdYxi2woTR0YeuwDG4IO_3BElBxFF3HVNtcdTiuHD9NhsdtfTZQueJabrNwQ/exec';                        
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw65Hu-_aX9omplansRc4HX4nSyHK1AL5NlBm25_6dXfi9QCPPAin2jseHLfDaRtYnSPw/exec';                        
                   
 // ---------------------------------------------------------------
 //  ESTADO GLOBAL
@@ -1550,9 +1550,32 @@ function abrirM(ai) {
     }).join('');
   document.getElementById('modalEdicion').classList.add('open');
 }
+function toggleEditarFicha() {
+  var modal = document.querySelector('#modalEdicion .modal');
+  var btn = document.getElementById('btn-editar-ficha');
+  var btnG = document.getElementById('btn-guardar-ficha');
+  var editando = modal.classList.toggle('modal-edit-mode');
+  if(editando) {
+    btn.innerHTML = '&#x2715; Cancelar'; btn.classList.add('activo');
+    btnG.style.display = 'block';
+    var f = DB.jugadores[itemSel.arrIdx];
+    var setV = function(id, v){ var el=document.getElementById(id); if(el) el.value=v||''; };
+    setV('mi-email',    f[COL.EMAIL]||'');
+    setV('mi-celular',  f[COL.CELULAR]||f[COL.TEL]||'');
+    setV('mi-domicilio',f[COL.DOMICILIO]||'');
+    setV('mi-obs',      f[COL.OBS]||'');
+    var c1 = (f[COL.CONTACTO1]||'').toString().split('|');
+    var c2 = (f[COL.CONTACTO2]||'').toString().split('|');
+    setV('mi-c1nombre', c1[0]||''); setV('mi-c1tel', c1[1]||'');
+    setV('mi-c2nombre', c2[0]||''); setV('mi-c2tel', c2[1]||'');
+  } else {
+    btn.innerHTML = '&#x270F; Editar'; btn.classList.remove('activo');
+    btnG.style.display = 'none';
+  }
+}
+
 function cerrarModal(){
   document.getElementById('modalEdicion').classList.remove('open');
-  // Resetear modo edicion
   var modal = document.querySelector('#modalEdicion .modal');
   if(modal) modal.classList.remove('modal-edit-mode');
   var btn = document.getElementById('btn-editar-ficha');
@@ -1579,43 +1602,13 @@ function autoCat() {
   else alert('Sin ' + T('grupo') + ' para anio ' + anioNac + ' / ' + gen);
 }
 
-function toggleEditarFicha() {
-  var modal = document.querySelector('#modalEdicion .modal');
-  var btn = document.getElementById('btn-editar-ficha');
-  var btnGuardar = document.getElementById('btn-guardar-ficha');
-  var editando = modal.classList.toggle('modal-edit-mode');
-  if (editando) {
-    btn.innerHTML = '&#x2715; Cancelar';
-    btn.classList.add('activo');
-    btnGuardar.style.display = 'block';
-    // Poblar inputs con valores actuales
-    var f = DB.jugadores[itemSel.arrIdx];
-    var setVal = function(id, val) { var el = document.getElementById(id); if(el) el.value = val||''; };
-    setVal('mi-email', f[COL.EMAIL]||'');
-    setVal('mi-celular', f[COL.CELULAR]||f[COL.TEL]||'');
-    setVal('mi-domicilio', f[COL.DOMICILIO]||'');
-    setVal('mi-obs', f[COL.OBS]||'');
-    var c1 = (f[COL.CONTACTO1]||'').toString().split('|');
-    var c2 = (f[COL.CONTACTO2]||'').toString().split('|');
-    setVal('mi-c1nombre', c1[0]||'');
-    setVal('mi-c1tel',    c1[1]||'');
-    setVal('mi-c2nombre', c2[0]||'');
-    setVal('mi-c2tel',    c2[1]||'');
-  } else {
-    btn.innerHTML = '&#x270F; Editar';
-    btn.classList.remove('activo');
-    btnGuardar.style.display = 'none';
-  }
-}
-
 function guardarJ() {
   if(!itemSel) return;
   var getV = function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
   var c1 = [getV('mi-c1nombre'), getV('mi-c1tel')].filter(Boolean).join('|');
   var c2 = [getV('mi-c2nombre'), getV('mi-c2tel')].filter(Boolean).join('|');
-  var d = {
-    sheet:    itemSel.sheet,
-    row:      itemSel.row,
+  var dni = (DB.jugadores[itemSel.arrIdx][COL.DNI]||DB.jugadores[itemSel.arrIdx][COL.TARJETA]||'').toString();
+  var campos = {
     genero:   document.getElementById('m-genero').value,
     activo:   document.getElementById('m-estado').value === 'true',
     categoria:document.getElementById('m-cat-m').value,
@@ -1627,20 +1620,20 @@ function guardarJ() {
     contacto2:c2
   };
   mostrarLoader('Guardando ficha...');
-  callScript({action:'updatePlayer', item:d, pass:TOKEN}, function(){
+  callScript({action:'updatePlayer', dni:dni, campos:campos, pass:TOKEN}, function(){
     var f = DB.jugadores[itemSel.arrIdx];
-    f[COL.ACTIVO]       = d.activo ? 'Si' : 'No';
-    f[COL.CATEGORIA_APP]= d.categoria;
-    f[COL.SEXO]         = d.genero;
-    f[COL.EMAIL]        = d.email;
-    f[COL.CELULAR]      = d.celular;
-    f[COL.DOMICILIO]    = d.domicilio;
-    f[COL.OBS]          = d.obs;
-    f[COL.CONTACTO1]    = d.contacto1;
-    f[COL.CONTACTO2]    = d.contacto2;
-    // Salir del modo edici&oacute;n
+    f[COL.ACTIVO]       = campos.activo ? 'Si' : 'No';
+    f[COL.CATEGORIA_APP]= campos.categoria;
+    f[COL.SEXO]         = campos.genero;
+    f[COL.EMAIL]        = campos.email;
+    f[COL.CELULAR]      = campos.celular;
+    f[COL.DOMICILIO]    = campos.domicilio;
+    f[COL.OBS]          = campos.obs;
+    f[COL.CONTACTO1]    = campos.contacto1;
+    f[COL.CONTACTO2]    = campos.contacto2;
+    // Salir del modo edicion
     var modal = document.querySelector('#modalEdicion .modal');
-    modal.classList.remove('modal-edit-mode');
+    if(modal) modal.classList.remove('modal-edit-mode');
     var btn = document.getElementById('btn-editar-ficha');
     if(btn){ btn.innerHTML='&#x270F; Editar'; btn.classList.remove('activo'); }
     var btnG = document.getElementById('btn-guardar-ficha');
@@ -2180,7 +2173,7 @@ window.addEventListener('load', function() {
 function registrarHuella(pass) {
   if(!window.PublicKeyCredential) return;
   if(localStorage.getItem(WA_CRED_KEY)) return;
-  // Solo ofrecer en dispositivos tactiles (celular/tablet), no en desktop
+  // Solo ofrecer en dispositivos t&aacute;ctiles (celular/tablet), no en desktop
   if(!navigator.maxTouchPoints || navigator.maxTouchPoints === 0) return;
   setTimeout(function(){
     if(!confirm('Queres ingresar con huella / Face ID la proxima vez?')) return;
