@@ -214,6 +214,15 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 .mat-cell-na{color:var(--border);font-size:11px;}
 .mat-cell-total{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--secondary);font-size:12px;}
 .mat-table tfoot td{background:var(--surface2);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;border-top:2px solid var(--border);}
+
+/* â”€â”€ ACTIVIDADES â”€â”€ */
+.act-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.act-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:12px;font-weight:700;color:#fff;opacity:.92;}
+.act-check-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);margin-bottom:6px;cursor:pointer;}
+.act-check-row:hover{background:var(--bg);}
+.act-check-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--primary);}
+.act-check-icono{font-size:18px;line-height:1;}
+.act-check-label{font-size:13px;font-weight:600;}
 </style>
 <link rel="manifest" href="manifest_admin.json">
 <meta name="theme-color" id="meta-theme-color" content="#1a7a3c">
@@ -401,6 +410,18 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       <button class="btn btn-gold" onclick="guardarPeriodos()" style="margin-top:8px;">GUARDAR TODOS LOS PERIODOS</button>
     </div>
 
+    <!-- Actividades -->
+    <div class="admin-card">
+      <div class="admin-title">Actividades</div>
+      <div style="display:grid;grid-template-columns:1fr 80px 120px;gap:8px;align-items:end;">
+        <div><label class="filter-label">Nombre</label><input id="actNom" class="edit-input" style="width:100%;margin-top:4px;" placeholder="ej: Futsal AFA"></div>
+        <div><label class="filter-label">&#x1F3AF; &Iacute;cono</label><input id="actIcono" class="edit-input" style="width:100%;margin-top:4px;font-size:20px;text-align:center;" placeholder="&#x26BD;" maxlength="4"></div>
+        <div><label class="filter-label">Color</label><input id="actColor" type="color" class="edit-input" value="#1a7a3c" style="width:100%;margin-top:4px;height:37px;padding:2px;"></div>
+      </div>
+      <button class="btn btn-save" onclick="guardarActividad()" style="margin-top:10px;">AGREGAR ACTIVIDAD</button>
+      <div class="item-list" id="listActividades"></div>
+    </div>
+
     <!-- Horarios -->
     <div class="admin-card">
       <div class="admin-title">Horarios / Turnos</div>
@@ -415,6 +436,8 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
         <div><label class="filter-label">Instructores</label><input id="hProfes" class="edit-input" style="width:100%;margin-top:4px;" placeholder="Separados por coma"></div>
         <div><label class="filter-label" id="lbl-horario-categoria">Categoria</label>
           <select id="hCat" class="edit-input" style="width:100%;margin-top:4px;"><option value="">Sin categoria</option></select></div>
+        <div><label class="filter-label">Actividad</label>
+          <select id="hActividad" class="edit-input" style="width:100%;margin-top:4px;"><option value="">Sin actividad</option></select></div>
         <div><label class="filter-label">Modalidad</label>
           <select id="hModalidad" class="edit-input" style="width:100%;margin-top:4px;">
             <option value="Mixto">Mixto</option>
@@ -652,6 +675,12 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
         </div>
         <div class="hist-bar" id="m-hist-bar"></div>
       </div>
+      <div class="modal-section" id="modal-sec-actividades">
+        <div class="modal-section-title">Actividades</div>
+        <div id="m-actividades-list" style="margin-bottom:10px;"></div>
+        <div id="m-actividades-checks" style="display:none;"></div>
+        <button class="btn btn-secondary" id="btn-guardar-actividades" onclick="guardarActividadesJ()" style="display:none;width:100%;margin-top:6px;font-size:12px;padding:8px;">GUARDAR ACTIVIDADES</button>
+      </div>
       <div class="modal-section">
         <div class="modal-section-title">Historial de pagos</div>
         <div id="m-hist-cuotas"></div>
@@ -780,7 +809,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.0</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.1</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -795,13 +824,13 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUt_Js9-OWDx1Trzi4Omn12jCUn9FrzwuiUUV9V5fRU_xJbRdzp8TcEBRtW2XceXXw6g/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUNlFuJqseX9me_7Kwon5A6QCoReZ7bqyebQ-dK_vlu6469SLiempgtlKhE221Ys5zPQ/exec';
                   
                   
 // ---------------------------------------------------------------
 //  ESTADO GLOBAL
 // ---------------------------------------------------------------
-var DB = {jugadores:[], profesores:[], sedes:[], categorias:[], horarios:[], configPagos:[], institucion:{}};
+var DB = {jugadores:[], profesores:[], sedes:[], categorias:[], horarios:[], configPagos:[], institucion:{}, actividades:[]};
 var CUOTAS_DB = {planes:[], cuotas:[]};
 var TOKEN = '', itemSel = null, catEditIdx = null, planEditIdx = null;
 var asistencias = [], asistActual = {}, pagoCtx = null, PERIODOS_EDIT = [];
@@ -814,7 +843,8 @@ var COL = {
   ACTIVO:6, TIPO_DOC:7, DNI:8, FECHA_NAC:9, SEXO:10,
   DOMICILIO:11, OBS:12, MEMBRESIA:13, VENCIMIENTO:14,
   FECHA_ING:15, CREADOR:16, CATEGORIA_APP:17, PLAN:18,
-  FOTO:19, DNI_FOTO:20, APTO:21, CONTACTO1:22, CONTACTO2:23, DNI_DORSO:24
+  FOTO:19, DNI_FOTO:20, APTO:21, CONTACTO1:22, CONTACTO2:23, DNI_DORSO:24,
+  ACTIVIDADES:25
 };
 
 // -- TERMINOLOGIA DINAMICA ----------------------------------------
@@ -986,13 +1016,19 @@ function inicializar() {
       '<p style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-family:\'Barlow Condensed\',sans-serif;">Cargando datos completos...</p>' +
       '</div>';
 
-    var pendientes = 2;
+    var pendientes = 3;
     function finCarga(){
       if(--pendientes === 0){
         renderPlayers();
         renderCuotas();
       }
     }
+    callScript({action:'getActividades', pass:TOKEN}, function(r){
+      DB.actividades = (r && r.actividades) ? r.actividades : [];
+      renderListActividades();
+      poblarSelectActividad();
+      finCarga();
+    }, function(){ finCarga(); });
     callScript({action:'getAsistencias', pass:TOKEN}, function(r){ asistencias = Array.isArray(r) ? r : (r && r.data ? r.data : []); finCarga(); }, function(){ finCarga(); });
     callScript({action:'getCuotas', pass:TOKEN}, function(r){
       // Normalizar cuotas de Sheets al formato unificado:
@@ -1203,6 +1239,21 @@ function renderPlayers() {
       html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">';
       html += '<span style="font-size:10px;color:var(--muted);text-transform:uppercase;">Asistencia mes</span>';
       html += '<span style="font-size:13px;font-weight:800;color:' + pc + ';">' + st.pct + '%</span></div>';
+    }
+    // Chips de actividades
+    var actStr = (f[COL.ACTIVIDADES]||'').toString().trim();
+    if(actStr) {
+      var actArr = actStr.split(',').map(function(a){ return a.trim(); }).filter(Boolean);
+      if(actArr.length) {
+        html += '<div class="act-chips">';
+        actArr.forEach(function(nombre) {
+          var actObj = (DB.actividades||[]).find(function(a){ return a.nombre === nombre; });
+          var color = actObj ? actObj.color : '#555';
+          var icono = actObj ? actObj.icono : '';
+          html += '<span class="act-chip" style="background:' + color + ';" title="' + nombre + '">' + (icono||nombre.substring(0,2)) + '</span>';
+        });
+        html += '</div>';
+      }
     }
     html += '</div>';
   });
@@ -1651,6 +1702,38 @@ function abrirM(ai) {
         + '<div class="hist-meta">' + (c[7]||'-') + '</div></div>'
         + '<div class="hist-monto">$' + Number(c[6]).toLocaleString('es-AR') + '</div></div>';
     }).join('');
+  // Cargar actividades del socio
+  var actStr = (f[COL.ACTIVIDADES]||'').toString().trim();
+  var actSocio = actStr ? actStr.split(',').map(function(a){ return a.trim(); }).filter(Boolean) : [];
+  // Mostrar chips de actividades actuales
+  var actListEl = document.getElementById('m-actividades-list');
+  if(actListEl) {
+    if(actSocio.length) {
+      actListEl.innerHTML = '<div class="act-chips">' + actSocio.map(function(nombre){
+        var ao = (DB.actividades||[]).find(function(a){ return a.nombre === nombre; });
+        var color = ao ? ao.color : '#555';
+        var icono = ao ? ao.icono : '';
+        return '<span class="act-chip" style="background:' + color + ';">' + (icono||'') + ' ' + nombre + '</span>';
+      }).join('') + '</div>';
+    } else {
+      actListEl.innerHTML = '<span style="color:var(--muted);font-size:12px;">Sin actividades asignadas</span>';
+    }
+  }
+  // Armar checkboxes para edicion
+  var actChecksEl = document.getElementById('m-actividades-checks');
+  if(actChecksEl) {
+    actChecksEl.innerHTML = (DB.actividades||[]).length ? (DB.actividades||[]).map(function(a){
+      var checked = actSocio.indexOf(a.nombre) >= 0;
+      return '<label class="act-check-row">'
+        + '<input type="checkbox" name="act_check" value="' + a.nombre + '"' + (checked ? ' checked' : '') + '>'
+        + '<span class="act-check-icono">' + (a.icono||'') + '</span>'
+        + '<span class="act-check-label">' + a.nombre + '</span>'
+        + '<span style="width:12px;height:12px;border-radius:50%;background:' + (a.color||'#888') + ';display:inline-block;margin-left:auto;"></span>'
+        + '</label>';
+    }).join('') : '<span style="color:var(--muted);font-size:12px;">Sin actividades configuradas</span>';
+    actChecksEl.style.display = 'none';
+    document.getElementById('btn-guardar-actividades').style.display = 'none';
+  }
   document.getElementById('modalEdicion').classList.add('open');
 }
 function toggleEditarFicha() {
@@ -1671,9 +1754,14 @@ function toggleEditarFicha() {
     var c2 = (f[COL.CONTACTO2]||'').toString().split('|');
     setV('mi-c1nombre', c1[0]||''); setV('mi-c1tel', c1[1]||'');
     setV('mi-c2nombre', c2[0]||''); setV('mi-c2tel', c2[1]||'');
+    // Mostrar checks de actividades
+    document.getElementById('m-actividades-checks').style.display = 'block';
+    document.getElementById('btn-guardar-actividades').style.display = 'block';
   } else {
     btn.innerHTML = '&#x270F; Editar'; btn.classList.remove('activo');
     btnG.style.display = 'none';
+    document.getElementById('m-actividades-checks').style.display = 'none';
+    document.getElementById('btn-guardar-actividades').style.display = 'none';
   }
 }
 
@@ -1711,16 +1799,20 @@ function guardarJ() {
   var c1 = [getV('mi-c1nombre'), getV('mi-c1tel')].filter(Boolean).join('|');
   var c2 = [getV('mi-c2nombre'), getV('mi-c2tel')].filter(Boolean).join('|');
   var dni = (DB.jugadores[itemSel.arrIdx][COL.DNI]||DB.jugadores[itemSel.arrIdx][COL.TARJETA]||'').toString();
+  // Leer actividades seleccionadas
+  var actChecks = document.querySelectorAll('#m-actividades-checks input[name="act_check"]:checked');
+  var actSeleccionadas = Array.from(actChecks).map(function(cb){ return cb.value; }).join(',');
   var campos = {
-    genero:   document.getElementById('m-genero').value,
-    activo:   document.getElementById('m-estado').value === 'true',
-    categoria:document.getElementById('m-cat-m').value,
-    email:    getV('mi-email'),
-    celular:  getV('mi-celular'),
-    domicilio:getV('mi-domicilio'),
-    obs:      getV('mi-obs'),
-    contacto1:c1,
-    contacto2:c2
+    genero:      document.getElementById('m-genero').value,
+    activo:      document.getElementById('m-estado').value === 'true',
+    categoria:   document.getElementById('m-cat-m').value,
+    email:       getV('mi-email'),
+    celular:     getV('mi-celular'),
+    domicilio:   getV('mi-domicilio'),
+    obs:         getV('mi-obs'),
+    contacto1:   c1,
+    contacto2:   c2,
+    actividades: actSeleccionadas
   };
   mostrarLoader('Guardando ficha...');
   callScript({action:'updatePlayer', dni:dni, campos:campos, pass:TOKEN}, function(){
@@ -1734,6 +1826,7 @@ function guardarJ() {
     f[COL.OBS]          = campos.obs;
     f[COL.CONTACTO1]    = campos.contacto1;
     f[COL.CONTACTO2]    = campos.contacto2;
+    f[COL.ACTIVIDADES]  = campos.actividades;
     // Salir del modo edicion
     var modal = document.querySelector('#modalEdicion .modal');
     if(modal) modal.classList.remove('modal-edit-mode');
@@ -1912,6 +2005,72 @@ function enviarComprobanteEmail() {
   );
 }
 
+// -- ACTIVIDADES ------------------------------------------------
+function renderListActividades() {
+  var el = document.getElementById('listActividades'); if(!el) return;
+  var acts = DB.actividades || [];
+  el.innerHTML = !acts.length ? '<p style="color:var(--muted);font-size:12px;padding:10px;">Sin actividades configuradas</p>' :
+    acts.map(function(a, i){
+      return '<div class="item-row">'
+        + '<span style="display:flex;align-items:center;gap:8px;">'
+        + '<span style="font-size:20px;">' + (a.icono||'') + '</span>'
+        + '<strong>' + a.nombre + '</strong>'
+        + '<span style="width:14px;height:14px;border-radius:50%;background:' + (a.color||'#888') + ';display:inline-block;"></span>'
+        + '</span>'
+        + '<button class="icon-btn" style="color:var(--red);" data-action="borrar" data-tabla="Actividades" data-row="' + (i+2) + '">X</button>'
+        + '</div>';
+    }).join('');
+  el.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-action="borrar"]');
+    if(btn) {
+      if(!confirm('Eliminar actividad?')) return;
+      borrar(btn.dataset.tabla, parseInt(btn.dataset.row));
+    }
+  });
+  poblarSelectActividad();
+}
+
+function guardarActividad() {
+  var nom   = document.getElementById('actNom').value.trim();
+  var icono = document.getElementById('actIcono').value.trim();
+  var color = document.getElementById('actColor').value;
+  if(!nom) return alert('Ingresa el nombre de la actividad');
+  mostrarLoader('Guardando...');
+  callScript({action:'addComplexItem', tabName:'Actividades', rowArray:[nom, icono, color], pass:TOKEN, _noRetry:true}, function(){
+    DB.actividades.push({nombre:nom, icono:icono, color:color});
+    document.getElementById('actNom').value = '';
+    document.getElementById('actIcono').value = '';
+    renderListActividades();
+    ocultarLoader();
+    toast('Actividad agregada', 'ok');
+  }, function(e){ ocultarLoader(); alert('Error: '+e); });
+}
+
+function guardarActividadesJ() {
+  if(!itemSel) return;
+  var checks = document.querySelectorAll('#m-actividades-checks input[name="act_check"]:checked');
+  var actStr = Array.from(checks).map(function(cb){ return cb.value; }).join(',');
+  var dni = (DB.jugadores[itemSel.arrIdx][COL.DNI]||DB.jugadores[itemSel.arrIdx][COL.TARJETA]||'').toString();
+  mostrarLoader('Guardando actividades...');
+  callScript({action:'updatePlayer', dni:dni, campos:{actividades:actStr}, pass:TOKEN}, function(){
+    DB.jugadores[itemSel.arrIdx][COL.ACTIVIDADES] = actStr;
+    // Actualizar vista de chips
+    var actSocio = actStr ? actStr.split(',').filter(Boolean) : [];
+    var actListEl = document.getElementById('m-actividades-list');
+    if(actListEl) {
+      actListEl.innerHTML = actSocio.length ? '<div class="act-chips">' + actSocio.map(function(nombre){
+        var ao = (DB.actividades||[]).find(function(a){ return a.nombre === nombre; });
+        var color = ao ? ao.color : '#555';
+        var icono = ao ? ao.icono : '';
+        return '<span class="act-chip" style="background:' + color + ';">' + (icono||'') + ' ' + nombre + '</span>';
+      }).join('') + '</div>' : '<span style="color:var(--muted);font-size:12px;">Sin actividades asignadas</span>';
+    }
+    document.getElementById('m-actividades-checks').style.display = 'none';
+    document.getElementById('btn-guardar-actividades').style.display = 'none';
+    ocultarLoader(); renderPlayers(); toast('Actividades guardadas', 'ok');
+  }, function(e){ alert('Error: ' + e); ocultarLoader(); });
+}
+
 // -- ADMIN ABM ----------------------------------------------------
 function renderList(id, data, tabla) {
   var el = document.getElementById(id); if(!el) return;
@@ -1964,13 +2123,13 @@ function renderHorarios() {
     return '<div class="item-row" style="border-left:4px solid var(--secondary);flex-direction:column;align-items:flex-start;">'
       + '<div style="display:flex;justify-content:space-between;width:100%;margin-bottom:4px;"><strong>' + h[0] + ' ' + h[1] + ' hs</strong>'
       + '<button class="icon-btn" style="color:var(--red);" data-action="borrar" data-tabla="Horarios" data-row="' + h[h.length-1] + '">X</button></div>'
-      + '<small style="color:var(--muted);">Sede: ' + (h[2]||'-') + ' | Instructores: ' + (h[3]||'-') + ' | ' + T('grupo') + ': ' + (h[4]||'-') + ' | Modalidad: ' + (h[6]||'Mixto') + '</small></div>';
+      + '<small style="color:var(--muted);">Sede: ' + (h[2]||'-') + ' | Instructores: ' + (h[3]||'-') + ' | ' + T('grupo') + ': ' + (h[4]||'-') + (h[5] ? ' | Actividad: ' + h[5] : '') + ' | Modalidad: ' + (h[6]||'Mixto') + '</small></div>';
   }).join('');
   el.addEventListener('click', function(e){ var btn = e.target.closest('[data-action="borrar"]'); if(btn) borrar(btn.dataset.tabla, parseInt(btn.dataset.row)); });
 }
 
 function crearHorario() {
-  var row = [document.getElementById('hDia').value, document.getElementById('hHora').value, document.getElementById('hSede').value, document.getElementById('hProfes').value, document.getElementById('hCat').value, '', document.getElementById('hModalidad').value || 'Mixto'];
+  var row = [document.getElementById('hDia').value, document.getElementById('hHora').value, document.getElementById('hSede').value, document.getElementById('hProfes').value, document.getElementById('hCat').value, document.getElementById('hActividad').value || '', document.getElementById('hModalidad').value || 'Mixto'];
   if(!row[0] || !row[1]) return alert('Completa dia y hora');
   mostrarLoader('Guardando...');
   callScript({action:'addComplexItem', tabName:'Horarios', rowArray:row, pass:TOKEN}, inicializar, function(e){ ocultarLoader(); alert('Error: '+e); });
@@ -1986,6 +2145,12 @@ function poblarSelects() {
   });
   var hSede = document.getElementById('hSede');
   if(hSede){ hSede.innerHTML = '<option value="">Sin sede</option>' + DB.sedes.map(function(s){ return '<option value="' + s[0] + '">' + s[0] + '</option>'; }).join(''); }
+  poblarSelectActividad();
+}
+
+function poblarSelectActividad() {
+  var hAct = document.getElementById('hActividad');
+  if(hAct){ hAct.innerHTML = '<option value="">Sin actividad</option>' + (DB.actividades||[]).map(function(a){ return '<option value="' + a.nombre + '">' + (a.icono||'') + ' ' + a.nombre + '</option>'; }).join(''); }
 }
 
 function autoAsignarPlanes() {
@@ -2572,6 +2737,6 @@ window.onload = function() {
   }
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.0</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.1</div>
 </body>
 </ht
