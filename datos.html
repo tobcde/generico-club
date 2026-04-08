@@ -694,47 +694,47 @@ function buildTabla() {
   var camposContacto = CAMPOS.filter(function(c){ return c.key.indexOf('c1') === 0 || c.key.indexOf('c2') === 0; });
 
   function renderSeccion(label, campos) {
-    var html = '<div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);">' + label + '</div>';
+    var html = "<div style='font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);'>" + label + "</div>";
     campos.forEach(function(c) {
-      var ocrVal = (S.ocrData && S.ocrData[c.key]) ? S.ocrData[c.key] : '';
-      var sysVal = (S.sistemaData && S.sistemaData[c.key]) ? S.sistemaData[c.key] : '';
-      if (c.tipo === 'date') { ocrVal = dmy2ymd(ocrVal); sysVal = dmy2ymd(sysVal); }
+      var ocrVal = (S.ocrData && S.ocrData[c.key]) ? S.ocrData[c.key] : "";
+      var sysVal = (S.sistemaData && S.sistemaData[c.key]) ? S.sistemaData[c.key] : "";
+      if (c.tipo === "date") { ocrVal = dmy2ymd(ocrVal); sysVal = dmy2ymd(sysVal); }
 
-      var rowCls = '';
+      var rowCls = "";
       if (c.editable) {
-        if (!sysVal && ocrVal)                                            rowCls = 'row-vacio';
-        else if (sysVal && ocrVal && normalizar(sysVal) !== normalizar(ocrVal)) rowCls = 'row-diff';
-        else if (sysVal)                                                  rowCls = 'row-ok';
+        if (!sysVal && ocrVal)                                              rowCls = "row-vacio";
+        else if (sysVal && ocrVal && normalizar(sysVal) !== normalizar(ocrVal)) rowCls = "row-diff";
+        else if (sysVal)                                                    rowCls = "row-ok";
       }
 
-      var badge = '';
-      if (rowCls === 'row-ok')    badge = ' <span class="badge-ok">&#x2713;</span>';
-      if (rowCls === 'row-vacio') badge = ' <span class="badge-warn">&#x270F;</span>';
-      if (rowCls === 'row-diff')  badge = ' <span class="badge-warn">&#x26A0;</span>';
+      var badge = "";
+      if (rowCls === "row-ok")    badge = " <span class='badge-ok'>&#x2713;</span>";
+      if (rowCls === "row-vacio") badge = " <span class='badge-warn'>&#x270F;</span>";
+      if (rowCls === "row-diff")  badge = " <span class='badge-warn'>&#x26A0;</span>";
 
-      var inputHtml = '';
+      var inputHtml = "";
       if (!c.editable) {
-        inputHtml = '<div style="font-size:13px;font-weight:600;color:var(--text);margin-top:4px;">' + (sysVal || '-') + '</div>';
-      } else if (c.tipo === 'select') {
-        inputHtml = '<select id="edit-' + c.key + '" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px;border-radius:6px;font-family:'Barlow',sans-serif;outline:none;">'
-          + c.opts.map(function(o){ return '<option value="' + o + '"' + (o === sysVal ? ' selected' : '') + '>' + (o || '- Seleccionar -') + '</option>'; }).join('')
-          + '</select>';
+        inputHtml = "<div style='font-size:13px;font-weight:600;color:var(--text);margin-top:4px;'>" + (sysVal || "-") + "</div>";
+      } else if (c.tipo === "select") {
+        inputHtml = "<select id='edit-" + c.key + "' style='width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px;border-radius:6px;outline:none;'>"
+          + c.opts.map(function(o){ return "<option value='" + o + "'" + (o === sysVal ? " selected" : "") + ">" + (o || "- Seleccionar -") + "</option>"; }).join("")
+          + "</select>";
       } else {
-        inputHtml = '<input type="' + (c.tipo || 'text') + '" id="edit-' + c.key + '" value="' + (sysVal || '') + '" placeholder="' + c.label + '" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px;border-radius:6px;font-family:'Barlow',sans-serif;outline:none;">';
+        inputHtml = "<input type='" + (c.tipo || "text") + "' id='edit-" + c.key + "' value='" + (sysVal || "").replace(/'/g, "&#39;") + "' placeholder='" + c.label + "' style='width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px;border-radius:6px;outline:none;'>";
       }
 
-      html += '<div class="campo-comp ' + rowCls + '">';
-      html +=   '<div class="campo-comp-label">' + c.label + badge + '</div>';
+      html += "<div class='campo-comp " + rowCls + "'>";
+      html +=   "<div class='campo-comp-label'>" + c.label + badge + "</div>";
       if (ocrVal) {
-        html += '<div class="campo-comp-ocr"><span style="font-size:10px;color:var(--muted);margin-right:4px;">DNI:</span> <b>' + ocrVal + '</b></div>';
+        html += "<div class='campo-comp-ocr'><span style='font-size:10px;color:var(--muted);margin-right:4px;'>DNI:</span> <b>" + ocrVal + "</b></div>";
       }
       if (!c.editable) {
         html += inputHtml;
       } else {
-        html += '<div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Base de datos (editable):</div>';
+        html += "<div style='font-size:10px;color:var(--muted);margin-bottom:3px;'>Base de datos (editable):</div>";
         html += inputHtml;
       }
-      html += '</div>';
+      html += "</div>";
     });
     return html;
   }
