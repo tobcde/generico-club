@@ -345,13 +345,16 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-
         <span class="card-title" id="lbl-apto-titulo">Certificado / Apto</span>
       </div>
       <div class="card-body">
-        <p class="card-desc" id="lbl-apto-desc">Opcional. Sub&iacute; el certificado o apto si ten&eacute;s uno.</p>
-        <div id="prev-apto-wrap" style="display:none;margin-bottom:12px;"></div>
+        <p class="card-desc" id="lbl-apto-desc">Sub&iacute; el certificado o apto. Puede ser imagen o PDF.</p>
         <div id="apto-upload-wrap">
-          <div class="upload-zone" id="zona-apto">
+          <div id="prev-apto-wrap" class="upload-preview" style="display:none;">
+            <img id="prev-apto-img" src="" alt="Certificado" style="max-height:200px;object-fit:contain;background:#111;">
+            <button class="upload-preview-remove" onclick="quitarFoto('apto')">&#x2715;</button>
+          </div>
+          <div class="upload-zone" id="zona-apto" style="display:block;">
             <input type="file" accept="image/*,application/pdf" onchange="cargarFoto('apto',this)">
             <div class="upload-zone-icon">&#x1F4C4;</div>
-            <div class="upload-zone-label" id="zona-apto-label">Subir imagen o PDF del certificado</div>
+            <div class="upload-zone-label">Subir imagen o PDF del certificado</div>
           </div>
         </div>
       </div>
@@ -465,7 +468,8 @@ function aplicarBranding(inst) {
   document.getElementById('header-titulo').innerHTML = nombre + ' &mdash; <span>Completar Datos</span>';
   document.getElementById('lbl-foto-titulo').innerText  = 'Foto del ' + tSocio;
   document.getElementById('lbl-apto-titulo').innerText  = 'Certificado / Apto';
-  document.getElementById('btn-reiniciar').innerHTML   = '&#x21BA; Cargar otro ' + tSocio.toLowerCase();
+  document.getElementById('lbl-tiene-apto').innerText   = 'Tiene certificado vigente';
+  document.getElementById('btn-reiniciar').innerText    = '&#x21BA; Cargar otro ' + tSocio.toLowerCase();
 }
 
 function hexToRgba(hex, alpha) {
@@ -480,7 +484,7 @@ function ajustarBrillo(hex, amt) {
 }
 
 // â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function mostrarLoader(msg){ document.getElementById('loader').classList.remove('oculto'); document.getElementById('loader-msg').innerHTML = msg||'Procesando...'; }
+function mostrarLoader(msg){ document.getElementById('loader').classList.remove('oculto'); document.getElementById('loader-msg').innerText = msg||'Procesando...'; }
 function ocultarLoader(){ document.getElementById('loader').classList.add('oculto'); }
 
 function toast(msg, tipo){
@@ -538,49 +542,57 @@ function irPaso(n) {
 function inicializarPaso4() {
   // â”€â”€ FOTO DE PERFIL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   var fotoExistente = S.sistemaData && S.sistemaData.fotoUrl;
-  if(fotoExistente) {
-    S.foto = fotoExistente; // marcar como existente para no re-subir si no cambia
-    document.getElementById('prev-foto-img').src = fotoExistente;
-    document.getElementById('prev-foto-wrap').style.display = 'block';
-    document.getElementById('zona-foto').style.display = 'none';
-    // Agregar bot&oacute;n para cambiar si no existe ya
-    var prevFotoWrap = document.getElementById('prev-foto-wrap');
-    if(!prevFotoWrap.querySelector('.btn-cambiar-foto')) {
-      var btnCambiar = document.createElement('button');
-      btnCambiar.className = 'btn btn-outline btn-sm btn-cambiar-foto';
-      btnCambiar.style.cssText = 'width:100%;margin-top:8px;';
-      btnCambiar.innerHTML = '&#x1F4F7; Cambiar foto';
-      btnCambiar.onclick = function() {
-        S.foto = null;
-        document.getElementById('prev-foto-wrap').style.display = 'none';
-        document.getElementById('zona-foto').style.display = 'block';
-      };
-      prevFotoWrap.appendChild(btnCambiar);
-    }
+  var prevFotoWrap = document.getElementById('prev-foto-wrap');
+  var prevFotoImg  = document.getElementById('prev-foto-img');
+  var zonaFoto     = document.getElementById('zona-foto');
+
+  // Remover bot&oacute;n cambiar previo si existe
+  var btnViejo = prevFotoWrap ? prevFotoWrap.querySelector('.btn-cambiar-foto') : null;
+  if(btnViejo) btnViejo.remove();
+
+  if(fotoExistente && prevFotoImg) {
+    prevFotoImg.src = fotoExistente;
+    prevFotoWrap.style.display = 'block';
+    zonaFoto.style.display = 'none';
+    // Bot&oacute;n para cambiar foto
+    var btnCambiar = document.createElement('button');
+    btnCambiar.className = 'btn btn-outline btn-sm btn-cambiar-foto';
+    btnCambiar.style.cssText = 'width:100%;margin-top:8px;';
+    btnCambiar.innerHTML = '&#x1F4F7; Cambiar foto';
+    btnCambiar.onclick = function() {
+      S.foto = null;
+      if(prevFotoImg) prevFotoImg.src = '';
+      prevFotoWrap.style.display = 'none';
+      zonaFoto.style.display = 'block';
+    };
+    prevFotoWrap.appendChild(btnCambiar);
   } else {
-    document.getElementById('prev-foto-wrap').style.display = 'none';
-    document.getElementById('zona-foto').style.display = 'block';
+    if(prevFotoWrap) prevFotoWrap.style.display = 'none';
+    if(zonaFoto) zonaFoto.style.display = 'block';
   }
 
   // â”€â”€ APTO / CERTIFICADO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   var aptoExistente = S.sistemaData && S.sistemaData.aptoUrl;
-  var prevAptoWrap = document.getElementById('prev-apto-wrap');
-  var zonaLabel = document.getElementById('zona-apto-label');
+  var prevAptoWrap  = document.getElementById('prev-apto-wrap');
+  var zonaApto      = document.getElementById('zona-apto');
+  var zonaLabel     = zonaApto ? zonaApto.querySelector('.upload-zone-label') : null;
 
   if(aptoExistente) {
     prevAptoWrap.innerHTML =
       '<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">'
-      + '<span style="color:var(--primary);">&#x2713; Certificado vigente en el sistema</span>'
+      + '<span style="color:var(--primary);">&#x2713; Certificado vigente</span>'
       + '<a href="' + aptoExistente + '" target="_blank" style="color:var(--secondary);font-size:12px;text-decoration:none;">Ver actual</a>'
       + '</div>';
     prevAptoWrap.style.display = 'block';
     if(zonaLabel) zonaLabel.innerText = 'Subir nuevo certificado (reemplaza el actual)';
   } else {
-    prevAptoWrap.style.display = 'none';
+    if(!S.apto) prevAptoWrap.style.display = 'none';
     if(zonaLabel) zonaLabel.innerText = 'Subir imagen o PDF del certificado';
   }
+  if(zonaApto) zonaApto.style.display = 'block';
 }
 
+// â”€â”€ C&Aacute;MARA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function toggleCam(n) {
   var wrap=document.getElementById('cam'+n+'-wrap'), video=document.getElementById('cam'+n+'-video'), btnCap=document.getElementById('btn-capturar'+n);
   if(wrap.style.display==='none'){
@@ -786,6 +798,9 @@ function getCamposEditados() {
 }
 
 // â”€â”€ FOTO Y DOCS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// toggleApto eliminado
+}
+
 function cargarFoto(tipo, input){
   var file=input.files[0]; if(!file) return;
   var reader=new FileReader();
@@ -797,13 +812,15 @@ function cargarFoto(tipo, input){
       document.getElementById('zona-foto').style.display='none';
     } else {
       S.apto=e.target.result; S.aptoType=file.type;
+      var prevApto = document.getElementById('prev-apto-wrap');
       if(file.type!=='application/pdf'){
-        document.getElementById('prev-apto-img').src=e.target.result;
-        document.getElementById('prev-apto-wrap').style.display='block';
+        prevApto.innerHTML = '<img src="' + e.target.result + '" style="width:100%;max-height:200px;object-fit:contain;display:block;background:#111;border-radius:8px;">'
+          + '<button class="upload-preview-remove" onclick="quitarFoto('apto')" style="position:absolute;top:8px;right:8px;">&#x2715;</button>';
+        prevApto.style.position = 'relative';
       } else {
-        document.getElementById('prev-apto-wrap').innerHTML='<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;">&#x1F4C4; '+file.name+'<button class="upload-preview-remove" style="position:relative;margin-left:10px;" onclick="quitarFoto(\'apto\')">&#x2715;</button></div>';
-        document.getElementById('prev-apto-wrap').style.display='block';
+        prevApto.innerHTML = '<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;">&#x1F4C4; '+file.name+'<button class="upload-preview-remove" style="position:relative;margin-left:10px;" onclick="quitarFoto('apto')">&#x2715;</button></div>';
       }
+      prevApto.style.display='block';
       document.getElementById('zona-apto').style.display='none';
     }
   };
@@ -891,17 +908,8 @@ function reiniciar(){
   document.getElementById('alert-dni-encontrado').style.display='none';
   document.getElementById('card-comp').style.display='none';
   document.getElementById('btn-sig3').disabled=true;
-  // Reset foto perfil
-  document.getElementById('prev-foto-wrap').style.display='none';
-  document.getElementById('zona-foto').style.display='block';
-  document.getElementById('prev-foto-img').src='';
-  var btnCambiar = document.querySelector('.btn-cambiar-foto');
-  if(btnCambiar) btnCambiar.remove();
-  // Reset apto
   document.getElementById('prev-apto-wrap').style.display='none';
-  document.getElementById('prev-apto-wrap').innerHTML='';
-  var zonaLabel = document.getElementById('zona-apto-label');
-  if(zonaLabel) zonaLabel.innerText = 'Subir imagen o PDF del certificado';
+  var zonaLbl = document.querySelector('#zona-apto .upload-zone-label'); if(zonaLbl) zonaLbl.innerText='Subir imagen o PDF del certificado';
   S.paso=6; irPaso(1);
 }
 
@@ -921,6 +929,5 @@ window.onload = function(){
   document.getElementById('btn-sig1').disabled = true;
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.5</div>
 </body>
 </html>
