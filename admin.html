@@ -824,7 +824,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUNlFuJqseX9me_7Kwon5A6QCoReZ7bqyebQ-dK_vlu6469SLiempgtlKhE221Ys5zPQ/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUt_Js9-OWDx1Trzi4Omn12jCUn9FrzwuiUUV9V5fRU_xJbRdzp8TcEBRtW2XceXXw6g/exec';
                   
                   
 // ---------------------------------------------------------------
@@ -1240,12 +1240,13 @@ function renderPlayers() {
       html += '<span style="font-size:10px;color:var(--muted);text-transform:uppercase;">Asistencia mes</span>';
       html += '<span style="font-size:13px;font-weight:800;color:' + pc + ';">' + st.pct + '%</span></div>';
     }
-    // Chips de actividades
+    html += '</div>';
+    // Chips de actividades (fuera del div con padding para la foto)
     var actStr = (f[COL.ACTIVIDADES]||'').toString().trim();
     if(actStr) {
       var actArr = actStr.split(',').map(function(a){ return a.trim(); }).filter(Boolean);
       if(actArr.length) {
-        html += '<div class="act-chips">';
+        html += '<div class="act-chips" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">';
         actArr.forEach(function(nombre) {
           var actObj = (DB.actividades||[]).find(function(a){ return a.nombre === nombre; });
           var color = actObj ? actObj.color : '#555';
@@ -1255,7 +1256,6 @@ function renderPlayers() {
         html += '</div>';
       }
     }
-    html += '</div>';
   });
 
   if(_skipped > 0){ html += '<div style="grid-column:1/-1;text-align:center;padding:14px;"><p style="color:var(--muted);font-size:12px;">Mostrando 60 de ' + t + '. Usa filtros para acotar.</p></div>'; }
