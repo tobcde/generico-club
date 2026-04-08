@@ -196,6 +196,24 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
   .ct-row>div:nth-child(6){grid-column:2;grid-row:3;}
   .modal-grid{grid-template-columns:1fr;}
 }
+
+/* â”€â”€ MATRIZ ASISTENCIA â”€â”€ */
+.mat-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.mat-table{border-collapse:collapse;font-size:11px;white-space:nowrap;}
+.mat-table th{background:var(--surface2);padding:4px 6px;border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);}
+.mat-table th.mat-fecha{font-size:10px;min-width:44px;max-width:44px;word-break:break-all;white-space:normal;text-align:center;vertical-align:bottom;padding:6px 3px 3px;}
+.mat-table th.mat-nombre{text-align:left;min-width:160px;position:sticky;left:0;z-index:2;background:var(--surface2);}
+.mat-table th.mat-total{min-width:44px;text-align:center;}
+.mat-table td{padding:4px 3px;border:1px solid var(--border);text-align:center;vertical-align:middle;}
+.mat-table td.mat-nombre{text-align:left;padding:4px 8px;font-weight:600;font-size:12px;position:sticky;left:0;z-index:1;background:var(--surface);}
+.mat-table td.mat-nombre:hover{background:var(--surface2);}
+.mat-table tr:nth-child(even) td.mat-nombre{background:var(--surface2);}
+.mat-table tr:nth-child(even) td.mat-nombre:hover{background:var(--border);}
+.mat-cell-pres{background:rgba(26,122,60,.25);color:#6de097;font-weight:700;font-size:13px;}
+.mat-cell-aus{background:rgba(248,81,73,.12);color:var(--red);font-size:13px;}
+.mat-cell-na{color:var(--border);font-size:11px;}
+.mat-cell-total{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--secondary);font-size:12px;}
+.mat-table tfoot td{background:var(--surface2);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;border-top:2px solid var(--border);}
 </style>
 <link rel="manifest" href="manifest_admin.json">
 <meta name="theme-color" id="meta-theme-color" content="#1a7a3c">
@@ -440,6 +458,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
           <option value="al_dia">Al dia</option>
           <option value="tipo_pago">Por tipo de pago</option>
           <option value="asistencia">Asistencia</option>
+            <option value="asist_matriz">Matriz de asistencia</option>
             <option value="asist_por_dia">Asistencia por d&iacute;a</option>
           <option value="ranking_asist">Ranking asistencia</option>
           <option value="jugadores">Listado completo</option>
@@ -1992,15 +2011,16 @@ function renderReporte() {
   var tipo = document.getElementById('rTipo').value;
   var _sd = function(id,v){ var e = document.getElementById(id); if(e) e.style.display = v; };
   _sd('r-filter-mes', tipo === 'tipo_pago' ? '' : 'none');
-  _sd('r-filter-desde', ['pagos_mes','asistencia','ranking_asist','asist_por_dia'].includes(tipo) ? '' : 'none');
-  _sd('r-filter-hasta', ['pagos_mes','asistencia','ranking_asist','asist_por_dia'].includes(tipo) ? '' : 'none');
+  _sd('r-filter-desde', ['pagos_mes','asistencia','ranking_asist','asist_por_dia','asist_matriz'].includes(tipo) ? '' : 'none');
+  _sd('r-filter-hasta', ['pagos_mes','asistencia','ranking_asist','asist_por_dia','asist_matriz'].includes(tipo) ? '' : 'none');
   _sd('r-filter-caja-fecha', tipo === 'caja_dia' ? '' : 'none');
-  _sd('r-filter-cat', ['deudores','al_dia','jugadores'].includes(tipo) ? '' : 'none');
+  _sd('r-filter-cat', ['deudores','al_dia','jugadores','asist_matriz'].includes(tipo) ? '' : 'none');
   if(tipo === 'deudores') rptDeudores();
   else if(tipo === 'al_dia') rptAlDia();
   else if(tipo === 'jugadores') rptJugadores();
   else if(tipo === 'asistencia') rptAsistencia();
   else if(tipo === 'asist_por_dia') rptAsistenciaPorDia();
+  else if(tipo === 'asist_matriz') rptAsistenciaMatriz();
   else if(tipo === 'ranking_asist') rptRankingAsist();
   else if(tipo === 'pagos_mes') rptPagosMes();
   else if(tipo === 'tipo_pago') rptTipoPago();
@@ -2179,6 +2199,155 @@ function rptAsistenciaPorDia() {
   nota.innerText = 'Hover sobre Presentes/Ausentes para ver los nombres del d&iacute;a';
 }
 
+function rptAsistenciaMatriz() {
+  var rango = getRangoFechas();
+  var cat   = document.getElementById('rCat').value;
+
+  // Filtrar asistencias por rango
+  var asistFiltradas = asistencias.filter(function(r){
+    return enRango(r[0], rango.desde, rango.hasta);
+  });
+
+  // Extraer fechas unicas ordenadas (col 0) y turnoIds (col 1)
+  var fechaMap = {}; // fecha -> turnoId (ultimo turno de ese dia, o combinado)
+  asistFiltradas.forEach(function(r){
+    var f = r[0]||'', t = r[1]||'';
+    if(!fechaMap[f]) fechaMap[f] = t;
+  });
+  var fechas = Object.keys(fechaMap).sort();
+
+  if(!fechas.length){
+    setCards([{val:0, lbl:'Sin registros en el rango'}]);
+    document.getElementById('rTabla').innerHTML = '<p style="color:var(--muted);padding:20px;">Sin datos en el rango seleccionado.</p>';
+    return;
+  }
+
+  // Indexar asistencias por DNI+fecha
+  var idx = {}; // idx[dni][fecha] = true|false
+  asistFiltradas.forEach(function(r){
+    var dni  = (r[3]||'').toString();
+    var fecha= r[0]||'';
+    var pres = r[5]===true || String(r[5]).toLowerCase()==='true';
+    if(!idx[dni]) idx[dni] = {};
+    // Si hay varios registros del mismo socio el mismo dia, queda el ultimo
+    idx[dni][fecha] = pres;
+  });
+
+  // Socios activos con registros en el periodo, filtrados por cat
+  var socios = DB.jugadores.slice(1).filter(function(f){
+    var a = f[COL.ACTIVO]; if(!(a===true||String(a).toLowerCase()==='si')) return false;
+    if(cat && String(f[COL.CATEGORIA_APP]||'').trim() !== String(cat).trim()) return false;
+    var dni = (f[COL.DNI]||f[COL.TARJETA]||'').toString();
+    return !!idx[dni];
+  }).sort(function(a,b){
+    return (a[COL.APELLIDO]||'').localeCompare(b[COL.APELLIDO]||'');
+  });
+
+  if(!socios.length){
+    setCards([{val:0, lbl:'Sin socios con registros'}]);
+    document.getElementById('rTabla').innerHTML = '<p style="color:var(--muted);padding:20px;">Sin socios con registros en el rango.</p>';
+    return;
+  }
+
+  // Calcular totales por fecha (presentes)
+  var totPorFecha = {};
+  fechas.forEach(function(f){ totPorFecha[f] = {pres:0, total:0}; });
+  socios.forEach(function(s){
+    var dni = (s[COL.DNI]||s[COL.TARJETA]||'').toString();
+    fechas.forEach(function(f){
+      if(idx[dni] && idx[dni][f] !== undefined){
+        totPorFecha[f].total++;
+        if(idx[dni][f]) totPorFecha[f].pres++;
+      }
+    });
+  });
+
+  // Construir HTML de la tabla
+  var html = '<div class="mat-wrap">';
+  html += '<table class="mat-table">';
+
+  // THEAD - fila de fechas
+  html += '<thead><tr>';
+  html += '<th class="mat-nombre">Socio</th>';
+  fechas.forEach(function(f){
+    // Formatear fecha: dd/mm
+    var partes = f.split('/');
+    var label = partes.length >= 2 ? partes[0]+'/'+partes[1] : f;
+    html += '<th class="mat-fecha">' + label + '</th>';
+  });
+  html += '<th class="mat-total">P</th>';
+  html += '<th class="mat-total">T</th>';
+  html += '<th class="mat-total">%</th>';
+  html += '</tr></thead>';
+
+  // TBODY - fila por socio
+  html += '<tbody>';
+  socios.forEach(function(s){
+    var dni    = (s[COL.DNI]||s[COL.TARJETA]||'').toString();
+    var nombre = (s[COL.APELLIDO]||'') + ', ' + (s[COL.NOMBRE]||'');
+    var pres = 0, total = 0;
+
+    html += '<tr>';
+    html += '<td class="mat-nombre">' + nombre + '</td>';
+    fechas.forEach(function(f){
+      var val = idx[dni] ? idx[dni][f] : undefined;
+      if(val === true){
+        pres++; total++;
+        html += '<td class="mat-cell-pres" title="Presente">&#x2713;</td>';
+      } else if(val === false){
+        total++;
+        html += '<td class="mat-cell-aus" title="Ausente">&#x2715;</td>';
+      } else {
+        html += '<td class="mat-cell-na">-</td>';
+      }
+    });
+    var pct = total > 0 ? Math.round(pres/total*100) : 0;
+    var cl  = pct>=75 ? 'ok' : pct>=50 ? '' : 'debe';
+    html += '<td class="mat-cell-total">' + pres + '</td>';
+    html += '<td class="mat-cell-total" style="color:var(--muted);">' + total + '</td>';
+    html += '<td class="mat-cell-total ' + cl + '">' + pct + '%</td>';
+    html += '</tr>';
+  });
+  html += '</tbody>';
+
+  // TFOOT - totales por fecha
+  html += '<tfoot><tr>';
+  html += '<td style="text-align:left;padding:4px 8px;font-weight:700;">TOTAL PRESENTES</td>';
+  fechas.forEach(function(f){
+    var t = totPorFecha[f];
+    var pct = t.total > 0 ? Math.round(t.pres/t.total*100) : 0;
+    var cl  = pct>=75 ? 'color:#6de097' : pct>=50 ? '' : 'color:var(--red)';
+    html += '<td style="text-align:center;font-size:11px;' + cl + '">' + t.pres + '/' + t.total + '</td>';
+  });
+  html += '<td colspan="3"></td>';
+  html += '</tr></tfoot>';
+
+  html += '</table></div>';
+
+  // Estadisticas generales
+  var totalPres = socios.reduce(function(acc, s){
+    var dni = (s[COL.DNI]||s[COL.TARJETA]||'').toString();
+    return acc + fechas.filter(function(f){ return idx[dni] && idx[dni][f]===true; }).length;
+  }, 0);
+  var totalReg = socios.reduce(function(acc, s){
+    var dni = (s[COL.DNI]||s[COL.TARJETA]||'').toString();
+    return acc + fechas.filter(function(f){ return idx[dni] && idx[dni][f]!==undefined; }).length;
+  }, 0);
+  var promPct = totalReg > 0 ? Math.round(totalPres/totalReg*100) : 0;
+
+  setCards([
+    {val: socios.length,       lbl: 'Socios'},
+    {val: fechas.length,       lbl: 'Clases'},
+    {val: totalPres,           lbl: 'Presencias', color:'#6de097'},
+    {val: promPct + '%',       lbl: 'Promedio',   color: promPct>=75?'#6de097':promPct>=50?'var(--secondary)':'var(--red)'}
+  ]);
+
+  // Renderizar directo en rTabla (saltear setTablaHeaders/setTablaRows)
+  document.getElementById('r-thead').innerHTML = '';
+  document.getElementById('r-tbody').innerHTML = '';
+  document.getElementById('rTabla').innerHTML  = html;
+}
+
 function rptRankingAsist() {
   var rango = getRangoFechas();
   var stats = {};
@@ -2322,5 +2491,6 @@ window.onload = function() {
   }
 };
 </script>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.7</div>
 </body>
 </ht
