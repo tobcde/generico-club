@@ -440,6 +440,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
           <option value="al_dia">Al dia</option>
           <option value="tipo_pago">Por tipo de pago</option>
           <option value="asistencia">Asistencia</option>
+            <option value="asist_por_dia">Asistencia por d&iacute;a</option>
           <option value="ranking_asist">Ranking asistencia</option>
           <option value="jugadores">Listado completo</option>
           <option value="caja_dia">Caja del dia</option>
@@ -632,21 +633,28 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       </div>
       <div class="modal-section">
         <div class="modal-section-title">Archivos</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;">
           <div>
             <div class="modal-field-label" style="margin-bottom:6px;">Foto de perfil</div>
-            <div id="l-perfil" style="width:100%;aspect-ratio:3/4;background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);"></div>
+            <div id="l-perfil" style="width:100%;aspect-ratio:3/4;background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);cursor:pointer;" onclick="abrirUrlArchivo('l-perfil')"></div>
             <button class="btn btn-secondary" onclick="subirArchivo('foto')" style="width:100%;margin-top:6px;font-size:11px;padding:7px;">Subir foto</button>
           </div>
           <div>
-            <div class="modal-field-label" style="margin-bottom:6px;">Documento</div>
-            <div id="l-dni" style="width:100%;aspect-ratio:3/4;background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);"></div>
-            <button class="btn btn-secondary" onclick="subirArchivo('dni')" style="width:100%;margin-top:6px;font-size:11px;padding:7px;">Subir documento</button>
+            <div class="modal-field-label" style="margin-bottom:6px;">Apto / Certificado</div>
+            <div id="l-apto" style="width:100%;aspect-ratio:3/4;background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);cursor:pointer;" onclick="abrirUrlArchivo('l-apto')"></div>
+            <button class="btn btn-secondary" onclick="subirArchivo('apto')" style="width:100%;margin-top:6px;font-size:11px;padding:7px;">Subir apto</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+          <div>
+            <div class="modal-field-label" style="margin-bottom:6px;">DNI Frente</div>
+            <div id="l-dni-frente" style="width:100%;aspect-ratio:16/10;background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);cursor:pointer;" onclick="abrirUrlArchivo('l-dni-frente')"></div>
+            <button class="btn btn-secondary" onclick="subirArchivo('dni')" style="width:100%;margin-top:6px;font-size:11px;padding:7px;">Subir DNI frente</button>
           </div>
           <div>
-            <div class="modal-field-label" style="margin-bottom:6px;">Apto / Certificado</div>
-            <div id="l-apto" style="width:100%;aspect-ratio:3/4;background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);"></div>
-            <button class="btn btn-secondary" onclick="subirArchivo('apto')" style="width:100%;margin-top:6px;font-size:11px;padding:7px;">Subir apto</button>
+            <div class="modal-field-label" style="margin-bottom:6px;">DNI Dorso</div>
+            <div id="l-dni-dorso" style="width:100%;aspect-ratio:16/10;background:var(--bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);cursor:pointer;" onclick="abrirUrlArchivo('l-dni-dorso')"></div>
+            <button class="btn btn-secondary" onclick="subirArchivo('dni-dorso')" style="width:100%;margin-top:6px;font-size:11px;padding:7px;">Subir DNI dorso</button>
           </div>
         </div>
         <input type="file" id="fileInput" accept="image/*,.pdf" style="display:none;" onchange="procesarArchivo(event)">
@@ -747,7 +755,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.5</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.6</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -1515,14 +1523,8 @@ function abrirM(ai) {
   document.getElementById('m-membresia').innerText = f[COL.MEMBRESIA]||'-';
   document.getElementById('m-venc-planilla').innerText = f[COL.VENCIMIENTO]||'-';
   mostrarFotoInline('l-perfil', f[COL.FOTO], false);
-  var dniFotoVal = '';
-  function esDriveUrl(u){ return u && (u.indexOf('drive.google')>=0 || u.indexOf('http')>=0); }
-  var dF = f[COL.DNI_FOTO] ? f[COL.DNI_FOTO].toString().trim() : '';
-  var dD = f[COL.DNI_DORSO] ? f[COL.DNI_DORSO].toString().trim() : '';
-  if(esDriveUrl(dF) && esDriveUrl(dD)) dniFotoVal = dF + '|' + dD;
-  else if(esDriveUrl(dF)) dniFotoVal = dF;
-  else if(esDriveUrl(dD)) dniFotoVal = dD;
-  mostrarFotoInline('l-dni', dniFotoVal, false);
+  mostrarFotoInline('l-dni-frente', f[COL.DNI_FOTO] ? f[COL.DNI_FOTO].toString().trim() : '', false);
+  mostrarFotoInline('l-dni-dorso', f[COL.DNI_DORSO] ? f[COL.DNI_DORSO].toString().trim() : '', false);
   mostrarFotoInline('l-apto', f[COL.APTO], f[COL.APTO]&&f[COL.APTO].toString().toLowerCase().indexOf('pdf')>=0);
   var st = getStatsJ(dni), pc = st.pct>=75?'#6de097':st.pct>=50?'var(--orange)':'var(--red)';
   document.getElementById('m-asist-pct').style.color = pc;
@@ -1653,21 +1655,23 @@ function procesarArchivo(event) {
   var reader = new FileReader();
   reader.onload = function(e) {
     var base64 = e.target.result;
-    var colMap = {foto:20, dni:21, apto:22};
+    var colMap = {foto:20, dni:21, apto:22, 'dni-dorso':25};
     var col = colMap[window._tipoArchivo] || 20;
+    var nombreArchivo = window._tipoArchivo === 'dni-dorso' ? 'dni_dorso' : window._tipoArchivo;
     mostrarLoader('Subiendo archivo...');
     callScriptPost({
       action:'uploadFile', base64:base64, mimeType:file.type,
-      nombre: window._tipoArchivo + (file.type.includes('pdf') ? '.pdf' : '.jpg'),
+      nombre: nombreArchivo + (file.type.includes('pdf') ? '.pdf' : '.jpg'),
       doc:(DB.jugadores[itemSel.arrIdx][COL.DNI]||DB.jugadores[itemSel.arrIdx][COL.TARJETA]||'').toString(),
       hoja:itemSel.sheet, fila:itemSel.row, columna:col, pass:TOKEN
     }, function(r){
       ocultarLoader();
       if(r.url){
         DB.jugadores[itemSel.arrIdx][col-1] = r.url;
-        if(window._tipoArchivo === 'foto') mostrarFotoInline('l-perfil', r.url, false);
-        if(window._tipoArchivo === 'dni') mostrarFotoInline('l-dni', r.url, false);
-        if(window._tipoArchivo === 'apto') mostrarFotoInline('l-apto', r.url, file.type.includes('pdf'));
+        if(window._tipoArchivo === 'foto')      mostrarFotoInline('l-perfil',    r.url, false);
+        if(window._tipoArchivo === 'dni')       mostrarFotoInline('l-dni-frente',r.url, false);
+        if(window._tipoArchivo === 'dni-dorso') mostrarFotoInline('l-dni-dorso', r.url, false);
+        if(window._tipoArchivo === 'apto')      mostrarFotoInline('l-apto',      r.url, file.type.includes('pdf'));
         toast('Archivo subido correctamente', 'ok');
       }
     }, function(e){ ocultarLoader(); alert('Error: ' + e); });
@@ -1678,16 +1682,18 @@ function procesarArchivo(event) {
 
 function mostrarFotoInline(id, url, esPdf) {
   var el = document.getElementById(id); if(!el) return;
+  el._driveUrl = url || '';
   if(!url || !url.toString().trim()){ el.innerHTML = '<span style="color:var(--muted);font-size:11px;">Sin archivo</span>'; return; }
-  if(typeof url === 'string' && url.includes('|')) {
-    var partes = url.split('|');
-    el.innerHTML = partes.map(function(u){ return '<img src="' + (getDriveThumb(u,'w400')||u) + '" style="width:50%;object-fit:cover;height:100%;" onerror="this.style.display=\'none\'">'; }).join('');
-    el.style.flexDirection = 'row';
-    return;
-  }
   if(esPdf){ el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:12px;">&#x1F4C4; Ver PDF</a>'; return; }
   var thumb = getDriveThumb(url.toString(), 'w400') || url;
-  el.innerHTML = '<img src="' + thumb + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.innerHTML=\'<span style=\\\'color:var(--muted);font-size:11px;\\\'>Error al cargar</span>\'">';
+  el.innerHTML = '<img src="' + thumb + '" style="width:100%;height:100%;object-fit:cover;" title="Click para abrir en Drive" onerror="this.innerHTML=\'<span style=\\\'color:var(--muted);font-size:11px;\\\'>Sin imagen</span>\'">';
+  el.style.cursor = 'pointer';
+}
+
+function abrirUrlArchivo(id) {
+  var el = document.getElementById(id);
+  if(!el || !el._driveUrl) return;
+  window.open(el._driveUrl.toString(), '_blank');
 }
 
 function btnContactoEmergencia(nombre, tel) {
@@ -1986,14 +1992,15 @@ function renderReporte() {
   var tipo = document.getElementById('rTipo').value;
   var _sd = function(id,v){ var e = document.getElementById(id); if(e) e.style.display = v; };
   _sd('r-filter-mes', tipo === 'tipo_pago' ? '' : 'none');
-  _sd('r-filter-desde', ['pagos_mes','asistencia','ranking_asist'].includes(tipo) ? '' : 'none');
-  _sd('r-filter-hasta', ['pagos_mes','asistencia','ranking_asist'].includes(tipo) ? '' : 'none');
+  _sd('r-filter-desde', ['pagos_mes','asistencia','ranking_asist','asist_por_dia'].includes(tipo) ? '' : 'none');
+  _sd('r-filter-hasta', ['pagos_mes','asistencia','ranking_asist','asist_por_dia'].includes(tipo) ? '' : 'none');
   _sd('r-filter-caja-fecha', tipo === 'caja_dia' ? '' : 'none');
   _sd('r-filter-cat', ['deudores','al_dia','jugadores'].includes(tipo) ? '' : 'none');
   if(tipo === 'deudores') rptDeudores();
   else if(tipo === 'al_dia') rptAlDia();
   else if(tipo === 'jugadores') rptJugadores();
   else if(tipo === 'asistencia') rptAsistencia();
+  else if(tipo === 'asist_por_dia') rptAsistenciaPorDia();
   else if(tipo === 'ranking_asist') rptRankingAsist();
   else if(tipo === 'pagos_mes') rptPagosMes();
   else if(tipo === 'tipo_pago') rptTipoPago();
@@ -2097,6 +2104,79 @@ function rptAsistencia() {
   setCards([{val:rows.length, lbl:T('socios') + ' con registros'}]);
   setTablaHeaders([T('socio'),T('grupo'),'Presentes','Total','%']);
   setTablaRows(rows);
+}
+
+function rptAsistenciaPorDia() {
+  var rango = getRangoFechas();
+  var cat = document.getElementById('rCat').value;
+
+  // Agrupar por fecha + turnoId
+  var porDia = {};
+  asistencias.filter(function(r){ return enRango(r[0], rango.desde, rango.hasta); }).forEach(function(r) {
+    var fecha   = r[0] || '';
+    var turnoId = r[1] || '';
+    var dni     = r[3] || '';
+    var nombre  = r[4] || '';
+    var catSoc  = r[5] !== undefined ? r[5] : (r[6] || ''); // col 5=Presente, 6=Categoria en algunos formatos
+    var presente= r[5] === true || String(r[5]).toLowerCase() === 'true';
+    var catAsist= r[6] || '';
+
+    // Si hay filtro de categor&iacute;a, filtrar por la categor&iacute;a del registro
+    if(cat && catAsist && String(catAsist).trim() !== String(cat).trim()) return;
+
+    var key = fecha + '||' + turnoId;
+    if(!porDia[key]) porDia[key] = {fecha:fecha, turnoId:turnoId, cat:catAsist, presentes:0, ausentes:0, total:0, listaPres:[], listaAus:[]};
+    porDia[key].total++;
+    if(presente){ porDia[key].presentes++; porDia[key].listaPres.push(nombre); }
+    else        { porDia[key].ausentes++;  porDia[key].listaAus.push(nombre); }
+  });
+
+  // Ordenar por fecha descendente
+  var dias = Object.values(porDia).sort(function(a,b){
+    return b.fecha.localeCompare(a.fecha);
+  });
+
+  if(!dias.length) {
+    setCards([{val:0, lbl:'D&iacute;as con registros'}]);
+    setTablaHeaders(['Fecha','Turno','Cat.','Presentes','Ausentes','Total','%']);
+    setTablaRows([]);
+    return;
+  }
+
+  var rows = dias.map(function(d) {
+    var pct = d.total > 0 ? Math.round(d.presentes/d.total*100) : 0;
+    var cl  = pct>=75?'ok':pct>=50?'':'debe';
+    var turnoLabel = d.turnoId.replace(/_/g,' ');
+    // Tooltip con los nombres
+    var titPres = d.listaPres.join(', ') || '-';
+    var titAus  = d.listaAus.join(', ')  || '-';
+    return '<tr>'
+      + td(d.fecha)
+      + td(turnoLabel,'muted')
+      + td(d.cat||'-','muted')
+      + '<td class="td ok num" title="' + titPres + '" style="cursor:help;">' + d.presentes + '</td>'
+      + '<td class="td debe num" title="' + titAus + '" style="cursor:help;">' + d.ausentes + '</td>'
+      + td(d.total,'muted num')
+      + td(pct+'%',cl+' num')
+      + '</tr>';
+  });
+
+  var totalPres = dias.reduce(function(s,d){ return s+d.presentes; },0);
+  var totalAus  = dias.reduce(function(s,d){ return s+d.ausentes; },0);
+  var promPct   = dias.length ? Math.round(dias.reduce(function(s,d){ return s+(d.total>0?d.presentes/d.total:0); },0)/dias.length*100) : 0;
+
+  setCards([
+    {val:dias.length, lbl:'D&iacute;as con registro'},
+    {val:totalPres,   lbl:'Total presencias',  color:'#6de097'},
+    {val:totalAus,    lbl:'Total ausencias',   color:'var(--red)'},
+    {val:promPct+'%', lbl:'Promedio asistencia'}
+  ]);
+  setTablaHeaders(['Fecha','Turno','Cat.','Presentes','Ausentes','Total','%']);
+  setTablaRows(rows);
+  // Nota al pie
+  var nota = document.getElementById('r-nota');
+  if(!nota){ nota = document.createElement('div'); nota.id='r-nota'; nota.style.cssText='color:var(--muted);font-size:11px;margin-top:8px;padding:0 4px;'; document.getElementById('rTabla').parentNode.appendChild(nota); }
+  nota.innerText = 'Hover sobre Presentes/Ausentes para ver los nombres del d&iacute;a';
 }
 
 function rptRankingAsist() {
