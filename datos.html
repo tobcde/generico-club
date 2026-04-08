@@ -861,7 +861,7 @@ function confirmarGuardar(){
 
   function guardarFotos(cb) {
     if(!S.imgFront&&!S.foto&&!S.apto){ cb({}); return; }
-    mostrarLoader('Subiendo im&aacute;genes a Drive...');
+    mostrarLoader('Subiendo imagenes a Drive...');
     callAPI('saveFotosDrive', {
       dni:normalizarDni(dni), imgFront:S.imgFront||null, imgBack:S.imgBack||null,
       foto:S.foto||null, apto:S.apto||null, aptoType:S.aptoType||null
