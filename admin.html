@@ -236,6 +236,20 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 .pago-plan-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary);}
 .pago-plan-nombre{flex:1;font-size:13px;font-weight:600;}
 .pago-plan-monto{font-size:13px;font-weight:700;color:var(--secondary);}
+
+/* â”€â”€ EMOJI PICKER â”€â”€ */
+.emoji-picker-wrap{position:relative;}
+.emoji-display{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-top:4px;min-height:37px;}
+.emoji-display:hover{border-color:var(--primary);}
+.emoji-display .emoji-val{font-size:22px;line-height:1;}
+.emoji-display .emoji-lbl{font-size:11px;color:var(--muted);}
+.emoji-dropdown{display:none;position:absolute;top:100%;left:0;z-index:999;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.emoji-dropdown.open{display:block;}
+.emoji-search{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;margin-bottom:8px;box-sizing:border-box;}
+.emoji-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-height:180px;overflow-y:auto;}
+.emoji-opt{font-size:22px;text-align:center;padding:4px;border-radius:6px;cursor:pointer;line-height:1.3;}
+.emoji-opt:hover{background:var(--primary-dark);}
+.emoji-opt.selected{background:var(--primary);box-shadow:0 0 0 2px var(--secondary);}
 </style>
 <link rel="manifest" href="manifest_admin.json">
 <meta name="theme-color" id="meta-theme-color" content="#1a7a3c">
@@ -428,7 +442,18 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       <div class="admin-title">Actividades</div>
       <div style="display:grid;grid-template-columns:1fr 80px 120px;gap:8px;align-items:end;">
         <div><label class="filter-label">Nombre</label><input id="actNom" class="edit-input" style="width:100%;margin-top:4px;" placeholder="ej: Futsal AFA"></div>
-        <div><label class="filter-label">&#x1F3AF; &Iacute;cono</label><input id="actIcono" class="edit-input" style="width:100%;margin-top:4px;font-size:20px;text-align:center;" placeholder="&#x26BD;" maxlength="4"></div>
+        <div class="emoji-picker-wrap" id="emoji-picker-wrap">
+          <label class="filter-label">&#x1F3AF; &Iacute;cono</label>
+          <input type="hidden" id="actIcono" value="">
+          <div class="emoji-display" onclick="toggleEmojiPicker()">
+            <span class="emoji-val" id="emoji-selected">&#x26BD;</span>
+            <span class="emoji-lbl">Click para elegir</span>
+          </div>
+          <div class="emoji-dropdown" id="emoji-dropdown">
+            <input type="text" class="emoji-search" placeholder="Buscar..." oninput="filtrarEmojis(this.value)" id="emoji-search-input">
+            <div class="emoji-grid" id="emoji-grid"></div>
+          </div>
+        </div>
         <div><label class="filter-label">Color</label><input id="actColor" type="color" class="edit-input" value="#1a7a3c" style="width:100%;margin-top:4px;height:37px;padding:2px;"></div>
       </div>
       <button class="btn btn-save" onclick="guardarActividad()" style="margin-top:10px;">AGREGAR ACTIVIDAD</button>
@@ -467,11 +492,18 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
     </div>
 
     <!-- Instructores -->
-    <div class="admin-card">
+    <div class="admin-card" id="cardProfesor">
       <div class="admin-title" id="lbl-admin-instructores">Instructores / Personal</div>
-      <input id="inpP" class="edit-input" style="width:100%;" placeholder="Nombre completo">
-      <button class="btn btn-save" onclick="crearSimple('Profesores','inpP')">AGREGAR</button>
-      <div class="item-list" id="listP"></div>
+      <input id="inpPNombre" class="edit-input" style="width:100%;margin-bottom:6px;" placeholder="Nombre completo *">
+      <input id="inpPDNI" class="edit-input" style="width:100%;margin-bottom:6px;" placeholder="DNI">
+      <input id="inpPFecha" class="edit-input" style="width:100%;margin-bottom:6px;" placeholder="Fecha de nacimiento (ej: 01/05/1990)">
+      <input id="inpPEmail" class="edit-input" style="width:100%;margin-bottom:6px;" placeholder="Email">
+      <input id="inpPPass" class="edit-input" style="width:100%;margin-bottom:6px;" placeholder="Contrasena (para login)">
+      <div style="display:flex;gap:8px;">
+        <button id="btnProfesor" class="btn btn-save" style="flex:1;" onclick="guardarProfesor()">AGREGAR</button>
+        <button id="btnCancelProfesor" class="btn" style="display:none;background:var(--muted);color:#fff;" onclick="cancelarEditProfesor()">CANCELAR</button>
+      </div>
+      <div class="item-list" id="listP" style="margin-top:10px;"></div>
     </div>
 
     <!-- Sedes -->
@@ -885,7 +917,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.3</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.4</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -1075,7 +1107,7 @@ function inicializar() {
     registrarHuella(TOKEN);
     renderPlayers();
     poblarSelects(); poblarTurnosAsist(); poblarPeriodos();
-    renderList('listP', DB.profesores, 'Profesores');
+    renderListProfesores();
     renderList('listS', DB.sedes, 'Sedes');
     renderListCat(); renderHorarios(); renderListPlanes();
     PERIODOS_EDIT = DB.configPagos.map(function(r){
@@ -1139,7 +1171,7 @@ function inicializar() {
 
 function renderAll() {
   renderPlayers();
-  renderList('listP', DB.profesores, 'Profesores');
+  renderListProfesores();
   renderList('listS', DB.sedes, 'Sedes');
   renderListCat(); renderHorarios(); renderListPlanes();
   poblarSelects(); poblarTurnosAsist(); poblarPeriodos();
@@ -2292,6 +2324,82 @@ function enviarComprobanteEmail() {
   );
 }
 
+// -- EMOJI PICKER ------------------------------------------------
+var EMOJIS_DEPORTES = [
+  {e:'âš½',n:'futbol'}, {e:'ðŸ€',n:'basquet'}, {e:'ðŸ',n:'voley'},
+  {e:'ðŸŽ¾',n:'tenis'}, {e:'ðŸ“',n:'ping pong'}, {e:'ðŸ¸',n:'badminton'},
+  {e:'âš¾',n:'beisbol'}, {e:'ðŸˆ',n:'rugby americano'}, {e:'ðŸ‰',n:'rugby'},
+  {e:'ðŸŽ±',n:'billar'}, {e:'ðŸŠ',n:'natacion'}, {e:'ðŸ‹',n:'gimnasio pesas'},
+  {e:'ðŸ¤¸',n:'gimnasia'}, {e:'ðŸ¤¼',n:'lucha'}, {e:'ðŸ¤º',n:'esgrima'},
+  {e:'ðŸ¥Š',n:'boxeo'}, {e:'ðŸ¥‹',n:'artes marciales judo karate'},
+  {e:'ðŸ‡',n:'equitacion'}, {e:'ðŸš´',n:'ciclismo'}, {e:'ðŸ„',n:'surf'},
+  {e:'ðŸ‚',n:'snowboard'}, {e:'â›·ï¸',n:'ski'}, {e:'ðŸŒï¸',n:'golf'},
+  {e:'ðŸŽ¯',n:'tiro'}, {e:'ðŸ¹',n:'arco tiro'}, {e:'ðŸ¥Œ',n:'curling'},
+  {e:'â›¸ï¸',n:'patinaje'}, {e:'ðŸ¤½',n:'polo acuatico'}, {e:'ðŸ‘',n:'hockey'},
+  {e:'ðŸ’',n:'hockey hielo'}, {e:'ðŸ›¹',n:'skate'}, {e:'ðŸ‹',n:'pesas'},
+  {e:'ðŸ¤¾',n:'handball'}, {e:'ðŸ‡',n:'hipismo'}, {e:'ðŸŽ¿',n:'esqui'},
+  {e:'ðŸ§—',n:'escalada'}, {e:'ðŸ¤¿',n:'buceo'}, {e:'ðŸŠ',n:'natacion femenino'},
+  {e:'ðŸ‘Ÿ',n:'zapatilla atletismo'}, {e:'ðŸŽ½',n:'remera atletismo'},
+  {e:'ðŸ…',n:'medalla'}, {e:'ðŸ¥‡',n:'oro'}, {e:'ðŸ†',n:'trofeo copa'},
+  {e:'ðŸ“‹',n:'planilla inscripcion'}, {e:'ðŸŽ“',n:'graduacion matricula'},
+  {e:'ðŸ’°',n:'dinero pago'}, {e:'ðŸŽª',n:'evento'}, {e:'ðŸŽ­',n:'actividad'},
+  {e:'ðŸŒŸ',n:'estrella destacado'}, {e:'ðŸ’ª',n:'fuerza entrenamiento'},
+  {e:'ðŸ§˜',n:'yoga meditacion'}, {e:'ðŸ¤¸',n:'acrobacia femenino'},
+  {e:'ðŸšµ',n:'mountain bike'}, {e:'ðŸŠ',n:'natacion masculino'},
+  {e:'ðŸŽ£',n:'pesca'}, {e:'ðŸ§œ',n:'sirena acuatico'},
+];
+
+var _emojiTodos = EMOJIS_DEPORTES.slice();
+
+function initEmojiPicker() {
+  renderEmojiGrid(_emojiTodos);
+  // Cerrar al click fuera
+  document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('emoji-picker-wrap');
+    if(wrap && !wrap.contains(e.target)) {
+      var dd = document.getElementById('emoji-dropdown');
+      if(dd) dd.classList.remove('open');
+    }
+  });
+}
+
+function renderEmojiGrid(lista) {
+  var grid = document.getElementById('emoji-grid'); if(!grid) return;
+  var sel = document.getElementById('actIcono').value;
+  grid.innerHTML = lista.map(function(item) {
+    return '<div class="emoji-opt' + (item.e === sel ? ' selected' : '') + '" '
+      + 'title="' + item.n + '" onclick="seleccionarEmoji(\'' + item.e + '\')">'
+      + item.e + '</div>';
+  }).join('');
+}
+
+function filtrarEmojis(q) {
+  var norm = (q||'').toLowerCase().trim();
+  var lista = norm ? _emojiTodos.filter(function(i){ return i.n.includes(norm); }) : _emojiTodos;
+  renderEmojiGrid(lista);
+}
+
+function toggleEmojiPicker() {
+  var dd = document.getElementById('emoji-dropdown');
+  if(!dd) return;
+  var abriendo = !dd.classList.contains('open');
+  dd.classList.toggle('open');
+  if(abriendo) {
+    renderEmojiGrid(_emojiTodos);
+    var inp = document.getElementById('emoji-search-input');
+    if(inp){ inp.value = ''; inp.focus(); }
+  }
+}
+
+function seleccionarEmoji(emoji) {
+  document.getElementById('actIcono').value = emoji;
+  var disp = document.getElementById('emoji-selected');
+  if(disp) disp.textContent = emoji;
+  var dd = document.getElementById('emoji-dropdown');
+  if(dd) dd.classList.remove('open');
+  renderEmojiGrid(_emojiTodos); // actualizar selected
+}
+
 // -- ACTIVIDADES ------------------------------------------------
 function renderListActividades() {
   var el = document.getElementById('listActividades'); if(!el) return;
@@ -2327,6 +2435,9 @@ function guardarActividad() {
     DB.actividades.push({nombre:nom, icono:icono, color:color});
     document.getElementById('actNom').value = '';
     document.getElementById('actIcono').value = '';
+    var disp = document.getElementById('emoji-selected');
+    if(disp) disp.textContent = '\u26BD';
+    renderEmojiGrid(_emojiTodos);
     renderListActividades();
     ocultarLoader();
     toast('Actividad agregada', 'ok');
@@ -2373,6 +2484,83 @@ function crearSimple(t, id) {
   document.getElementById(id).value = '';
   mostrarLoader('Guardando...');
   callScript({action:'addComplexItem', tabName:t, rowArray:[v], pass:TOKEN, _noRetry:true}, inicializar, function(e){ ocultarLoader(); alert('Error: '+e); });
+}
+
+// â”€â”€ ABM PROFESORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+var profEditIdx = null;
+
+function renderListProfesores() {
+  var el = document.getElementById('listP'); if(!el) return;
+  el.innerHTML = DB.profesores.map(function(p, i) {
+    var nombre = p[0] || '';
+    var dni = p[1] ? (' &bull; DNI: ' + p[1]) : '';
+    var email = p[3] ? (' &bull; ' + p[3]) : '';
+    var row = p[p.length - 1];
+    return '<div class="item-row" style="flex-direction:column;align-items:flex-start;gap:4px;">'
+      + '<div style="display:flex;width:100%;justify-content:space-between;align-items:center;">'
+      + '<span style="font-weight:600;">' + nombre + '</span>'
+      + '<div style="display:flex;gap:6px;">'
+      + '<button class="icon-btn" style="color:var(--muted);font-size:13px;" data-action="editprof" data-idx="' + i + '">editar</button>'
+      + '<button class="icon-btn" style="color:var(--red);" data-action="borrar" data-tabla="Profesores" data-row="' + row + '">X</button>'
+      + '</div></div>'
+      + '<span style="font-size:12px;color:var(--muted);">' + dni + email + '</span>'
+      + '</div>';
+  }).join('');
+  el.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]'); if(!btn) return;
+    if(btn.dataset.action === 'borrar') borrar(btn.dataset.tabla, parseInt(btn.dataset.row));
+    if(btn.dataset.action === 'editprof') {
+      var p = DB.profesores[parseInt(btn.dataset.idx)];
+      cargarEditProfesor(p[p.length-1], p[0], p[1], p[2], p[3], p[4]);
+    }
+  });
+}
+
+function cargarEditProfesor(idx, nombre, dni, fecha, email, pass) {
+  profEditIdx = idx;
+  document.getElementById('inpPNombre').value = nombre || '';
+  document.getElementById('inpPDNI').value = dni || '';
+  document.getElementById('inpPFecha').value = fecha || '';
+  document.getElementById('inpPEmail').value = email || '';
+  document.getElementById('inpPPass').value = pass || '';
+  document.getElementById('btnProfesor').innerText = 'ACTUALIZAR';
+  document.getElementById('btnProfesor').style.background = 'var(--orange)';
+  document.getElementById('cardProfesor').style.borderColor = 'var(--orange)';
+  document.getElementById('btnCancelProfesor').style.display = '';
+  document.getElementById('inpPNombre').focus();
+}
+
+function cancelarEditProfesor() {
+  profEditIdx = null;
+  document.getElementById('inpPNombre').value = '';
+  document.getElementById('inpPDNI').value = '';
+  document.getElementById('inpPFecha').value = '';
+  document.getElementById('inpPEmail').value = '';
+  document.getElementById('inpPPass').value = '';
+  document.getElementById('btnProfesor').innerText = 'AGREGAR';
+  document.getElementById('btnProfesor').style.background = '';
+  document.getElementById('cardProfesor').style.borderColor = '';
+  document.getElementById('btnCancelProfesor').style.display = 'none';
+}
+
+function guardarProfesor() {
+  var nombre = document.getElementById('inpPNombre').value.trim();
+  if(!nombre) return alert('El nombre es obligatorio');
+  var rowArray = [
+    nombre,
+    document.getElementById('inpPDNI').value.trim(),
+    document.getElementById('inpPFecha').value.trim(),
+    document.getElementById('inpPEmail').value.trim(),
+    document.getElementById('inpPPass').value.trim()
+  ];
+  mostrarLoader('Guardando...');
+  var cb = function() { cancelarEditProfesor(); inicializar(); toast('Instructor guardado', 'ok'); };
+  var err = function(e) { ocultarLoader(); alert('Error: ' + e); };
+  if(profEditIdx) {
+    callScript({action:'updateAdminItem', tabName:'Profesores', rowIndex:profEditIdx, rowArray:rowArray, pass:TOKEN, _noRetry:true}, cb, err);
+  } else {
+    callScript({action:'addComplexItem', tabName:'Profesores', rowArray:rowArray, pass:TOKEN, _noRetry:true}, cb, err);
+  }
 }
 
 function borrar(t, r){ if(!confirm('Eliminar?')) return; mostrarLoader('Eliminando...'); callScript({action:'deleteAdminItem', tabName:t, rowIndex:r, pass:TOKEN}, inicializar); }
@@ -2936,6 +3124,7 @@ function cambiarTab(ev, id) {
   if(id === 'cuotas'){ renderCuotas(); renderListPlanes(); }
   if(id === 'reportes'){ iniciarReportes(); }
   if(id === 'institucion'){ cargarFormInstitucion(); cargarCamposExtra(); }
+  if(id === 'admin'){ initEmojiPicker(); }
 }
 
 // -- TOAST --------------------------------------------------------
@@ -3027,6 +3216,6 @@ window.onload = function() {
   }
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.3</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.4</div>
 </body>
 </ht
