@@ -774,7 +774,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.8</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.9</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -789,7 +789,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRaSnO1RjP0APApStrMvnQ3C9MHdZ6xSj-5Xpuy3UQ-uwN-e9h099-FlHMKTyy97kKrg/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUt_Js9-OWDx1Trzi4Omn12jCUn9FrzwuiUUV9V5fRU_xJbRdzp8TcEBRtW2XceXXw6g/exec';
                   
                   
 // ---------------------------------------------------------------
@@ -1069,17 +1069,21 @@ function estadoCuotaV2(f) {
 
   // Calcular saldo neto acumulado sumando col Saldo (&iacute;ndice 10) de todos los pagos
   // Si no hay col Saldo, fallback al m&eacute;todo anterior
-  var tieneSaldo = pagos.some(function(c){ return c[10] !== undefined && c[10] !== null; });
+  // Calcular saldo neto acumulado de todos los pagos
+  // Sheets normalizado: saldo en c[10] (number)
+  // Memoria (length>=11, c[11]=timestamp): no tiene saldo -> calcular monto - plan
   var saldoNeto = 0;
-  if(tieneSaldo) {
-    pagos.forEach(function(c){
-      if(c[10] !== undefined && c[10] !== null) saldoNeto += Number(c[10]) || 0;
-    });
-  } else if(mejor) {
-    // fallback: monto pagado vs plan
-    var montoPagado = Number(mejor[6])||0;
-    saldoNeto = montoPagado - planMonto;
-  }
+  pagos.forEach(function(c) {
+    var tieneTimestamp = c.length >= 12 && typeof c[11] === 'number';
+    var saldoEnSheet   = !tieneTimestamp && c[10] !== undefined && c[10] !== null && c[10] !== '' && typeof c[10] === 'number';
+    if(saldoEnSheet) {
+      saldoNeto += Number(c[10]) || 0;
+    } else {
+      // memoria o Sheets sin col J: calcular monto - plan
+      var montoC = Number(c[6]) || 0;
+      if(montoC > 0) saldoNeto += montoC - planMonto;
+    }
+  });
 
   // saldoNeto > 0 = a favor, saldoNeto < 0 = debe
   var deudaActividad = saldoNeto >= 0 ? 0 : Math.abs(saldoNeto);
@@ -2525,6 +2529,6 @@ window.onload = function() {
   }
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.8</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.9</div>
 </body>
 </ht
