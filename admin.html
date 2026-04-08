@@ -2195,7 +2195,7 @@ function rptAsistenciaPorDia() {
   setTablaRows(rows);
   // Nota al pie
   var nota = document.getElementById('r-nota');
-  if(!nota){ nota = document.createElement('div'); nota.id='r-nota'; nota.style.cssText='color:var(--muted);font-size:11px;margin-top:8px;padding:0 4px;'; document.getElementById('rTabla').parentNode.appendChild(nota); }
+  if(!nota){ nota = document.createElement('div'); nota.id='r-nota'; nota.style.cssText='color:var(--muted);font-size:11px;margin-top:8px;padding:0 4px;'; var rTbl = document.getElementById('r-tabla') || document.getElementById('rTabla'); if(rTbl && rTbl.parentNode) rTbl.parentNode.appendChild(nota); }
   nota.innerText = 'Hover sobre Presentes/Ausentes para ver los nombres del d&iacute;a';
 }
 
@@ -2343,9 +2343,9 @@ function rptAsistenciaMatriz() {
   ]);
 
   // Renderizar directo en rTabla (saltear setTablaHeaders/setTablaRows)
-  document.getElementById('r-thead').innerHTML = '';
-  document.getElementById('r-tbody').innerHTML = '';
-  document.getElementById('rTabla').innerHTML  = html;
+  var _th = document.getElementById('r-thead'); if(_th) _th.innerHTML = '';
+  var _tb = document.getElementById('r-tbody'); if(_tb) _tb.innerHTML = '';
+  (document.getElementById('r-tabla') || document.getElementById('rTabla')).innerHTML = html;
 }
 
 function rptRankingAsist() {
