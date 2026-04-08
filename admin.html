@@ -1970,7 +1970,7 @@ function renderHorarios() {
 }
 
 function crearHorario() {
-  var row = [document.getElementById('hDia').value, document.getElementById('hHora').value, document.getElementById('hSede').value, document.getElementById('hProfes').value, document.getElementById('hCat').value, document.getElementById('hModalidad').value || 'Mixto'];
+  var row = [document.getElementById('hDia').value, document.getElementById('hHora').value, document.getElementById('hSede').value, document.getElementById('hProfes').value, document.getElementById('hCat').value, '', document.getElementById('hModalidad').value || 'Mixto'];
   if(!row[0] || !row[1]) return alert('Completa dia y hora');
   mostrarLoader('Guardando...');
   callScript({action:'addComplexItem', tabName:'Horarios', rowArray:row, pass:TOKEN}, inicializar, function(e){ ocultarLoader(); alert('Error: '+e); });
