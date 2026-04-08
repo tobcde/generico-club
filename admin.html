@@ -1219,16 +1219,16 @@ function renderPlayers() {
     if(_rendered >= _PAG){ _skipped++; return; }
     _rendered++;
 
-    html += '<div class="card" onclick="abrirM(' + (i+1) + ')" style="border-left-color:' + bc + '">';
+    // Card con foto absoluta y TODO el contenido en el div con padding
     var fotoUrl = getDriveThumb(f[COL.FOTO], 'w200');
-    var fotoHtml = fotoUrl ? '<img src="' + fotoUrl + '" style="width:80px;height:96px;border-radius:8px;object-fit:cover;border:2px solid ' + bc + ';position:absolute;top:50%;right:8px;transform:translateY(-50%);" onerror="this.parentNode.removeChild(this)">' : '';
-    var prStyle = fotoUrl ? 'padding-right:96px;min-height:96px;' : '';
+    var fotoHtml = fotoUrl ? '<img src="' + fotoUrl + '" style="width:80px;height:90px;border-radius:8px;object-fit:cover;border:2px solid ' + bc + ';position:absolute;top:10px;right:8px;" onerror="this.style.display='none'">' : '';
+    var prStyle = fotoUrl ? 'padding-right:96px;' : '';
+    html += '<div class="card" onclick="abrirM(' + (i+1) + ')" style="border-left-color:' + bc + ';position:relative;">';
     html += '<div class="cat-badge" style="background:' + bc + '">' + cat + rango + '</div>';
     html += fotoHtml;
     html += '<div style="' + prStyle + '">';
-    html += '<h4 class="card-nombre" style="margin:0;">' + apellido + '<br><span style="font-size:12px;color:var(--muted);">' + nombre + '</span></h4>';
-    html += '</div>';
-    html += '<p class="card-info">Doc: ' + dni + (anioNac ? ' | Nac. ' + anioNac : '') + '</p>';
+    html += '<h4 class="card-nombre" style="margin:0 0 2px 0;">' + apellido + '<br><span style="font-size:12px;color:var(--muted);">' + nombre + '</span></h4>';
+    html += '<p class="card-info" style="margin:0 0 6px 0;">Doc: ' + dni + (anioNac ? ' | Nac. ' + anioNac : '') + '</p>';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
     html += '<div><span class="status-dot ' + (act ? 'active-dot' : 'inactive-dot') + '"></span>';
     html += '<span style="font-size:11px;font-weight:600;text-transform:uppercase;">' + (act ? 'ACTIVO' : 'INACTIVO') + '</span></div>';
@@ -1240,12 +1240,11 @@ function renderPlayers() {
       html += '<span style="font-size:10px;color:var(--muted);text-transform:uppercase;">Asistencia mes</span>';
       html += '<span style="font-size:13px;font-weight:800;color:' + pc + ';">' + st.pct + '%</span></div>';
     }
-    // Chips de actividades
     var actStr = (f[COL.ACTIVIDADES]||'').toString().trim();
     if(actStr) {
       var actArr = actStr.split(',').map(function(a){ return a.trim(); }).filter(Boolean);
       if(actArr.length) {
-        html += '<div class="act-chips">';
+        html += '<div class="act-chips" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">';
         actArr.forEach(function(nombre) {
           var actObj = (DB.actividades||[]).find(function(a){ return a.nombre === nombre; });
           var color = actObj ? actObj.color : '#555';
@@ -1255,6 +1254,7 @@ function renderPlayers() {
         html += '</div>';
       }
     }
+    html += '</div>';
     html += '</div>';
   });
 
