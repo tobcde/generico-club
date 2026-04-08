@@ -127,6 +127,13 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 .modal-field.full{grid-column:1/-1;}
 .modal-field-label{font-size:10px;color:var(--muted);text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;letter-spacing:.05em;}
 .modal-field-value{background:var(--bg);border:1px solid var(--border);padding:10px 12px;border-radius:6px;font-size:13px;min-height:40px;display:flex;align-items:center;}
+.modal-edit-mode .modal-field-value{display:none;}
+.modal-field-input{display:none;width:100%;background:var(--surface2);border:1px solid var(--primary);color:var(--text);font-size:13px;padding:8px 10px;border-radius:6px;font-family:'Barlow',sans-serif;outline:none;box-sizing:border-box;}
+.modal-field-input:focus{border-color:var(--secondary);}
+.modal-edit-mode .modal-field-input{display:block;}
+.btn-editar{background:var(--secondary-dim);border:1px solid var(--secondary-border);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;padding:6px 16px;border-radius:8px;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:all .2s;}
+.btn-editar:hover{background:var(--secondary);color:#000;}
+.btn-editar.activo{background:var(--red-dim);border-color:var(--red-border);color:var(--red);}
 .hist-cuota-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);}
 .hist-periodo{font-family:'Barlow Condensed';font-weight:800;font-size:13px;}
 .hist-meta{font-size:11px;color:var(--muted);margin-top:2px;}
@@ -370,7 +377,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-save" onclick="agregarPeriodo()">AGREGAR PERIODO</button>
-        <button class="btn btn-secondary" onclick="generarPeriodosAnio()">GENERAR Aï¿½O COMPLETO</button>
+        <button class="btn btn-secondary" onclick="generarPeriodosAnio()">GENERAR A&Ntilde;O COMPLETO</button>
       </div>
       <div id="listPeriodosAdmin" style="max-height:300px;overflow-y:auto;margin-top:10px;"></div>
       <button class="btn btn-gold" onclick="guardarPeriodos()" style="margin-top:8px;">GUARDAR TODOS LOS PERIODOS</button>
@@ -554,26 +561,29 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
         <div class="modal-title" id="m-nombre">Cargando...</div>
         <div class="modal-subtitle" id="m-dni-sub"></div>
       </div>
-      <button class="modal-close" onclick="cerrarModal()">&#x2715;</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-editar" id="btn-editar-ficha" onclick="toggleEditarFicha()">&#x270F; Editar</button>
+        <button class="modal-close" onclick="cerrarModal()">&#x2715;</button>
+      </div>
     </div>
     <div class="modal-body">
       <div class="modal-section">
         <div class="modal-section-title">Datos personales</div>
         <div class="modal-grid">
           <div class="modal-field"><span class="modal-field-label">Edad / Anio nac.</span><div class="modal-field-value" id="m-edad"></div></div>
-          <div class="modal-field"><span class="modal-field-label">Email</span><div class="modal-field-value" id="m-email"></div></div>
-          <div class="modal-field"><span class="modal-field-label">Telefono</span><div class="modal-field-value" id="m-celular"></div></div>
-          <div class="modal-field"><span class="modal-field-label">Domicilio</span><div class="modal-field-value" id="m-domicilio"></div></div>
-          <div class="modal-field full"><span class="modal-field-label">Observaciones</span><div class="modal-field-value" id="m-obs"></div></div>
+          <div class="modal-field"><span class="modal-field-label">Email</span><div class="modal-field-value" id="m-email"></div><input class="modal-field-input" id="mi-email" type="email" placeholder="Email"></div>
+          <div class="modal-field"><span class="modal-field-label">Telefono</span><div class="modal-field-value" id="m-celular"></div><input class="modal-field-input" id="mi-celular" type="tel" placeholder="Tel&eacute;fono"></div>
+          <div class="modal-field"><span class="modal-field-label">Domicilio</span><div class="modal-field-value" id="m-domicilio"></div><input class="modal-field-input" id="mi-domicilio" type="text" placeholder="Domicilio"></div>
+          <div class="modal-field full"><span class="modal-field-label">Observaciones</span><div class="modal-field-value" id="m-obs"></div><input class="modal-field-input" id="mi-obs" type="text" placeholder="Observaciones"></div>
         </div>
       </div>
       <div class="modal-section">
         <div class="modal-section-title">Contactos de emergencia</div>
         <div class="modal-grid">
-          <div class="modal-field"><span class="modal-field-label">Contacto 1</span><div class="modal-field-value" id="m-contacto1"></div></div>
-          <div class="modal-field"><span class="modal-field-label">TelÃ©fono C1</span><div class="modal-field-value" id="m-contacto1-tel"></div></div>
-          <div class="modal-field"><span class="modal-field-label">Contacto 2</span><div class="modal-field-value" id="m-contacto2"></div></div>
-          <div class="modal-field"><span class="modal-field-label">TelÃ©fono C2</span><div class="modal-field-value" id="m-contacto2-tel"></div></div>
+          <div class="modal-field"><span class="modal-field-label">Contacto 1</span><div class="modal-field-value" id="m-contacto1"></div><input class="modal-field-input" id="mi-c1nombre" type="text" placeholder="Nombre contacto 1"></div>
+          <div class="modal-field"><span class="modal-field-label">Tel&eacute;fono C1</span><div class="modal-field-value" id="m-contacto1-tel"></div><input class="modal-field-input" id="mi-c1tel" type="tel" placeholder="Tel&eacute;fono contacto 1"></div>
+          <div class="modal-field"><span class="modal-field-label">Contacto 2</span><div class="modal-field-value" id="m-contacto2"></div><input class="modal-field-input" id="mi-c2nombre" type="text" placeholder="Nombre contacto 2"></div>
+          <div class="modal-field"><span class="modal-field-label">Tel&eacute;fono C2</span><div class="modal-field-value" id="m-contacto2-tel"></div><input class="modal-field-input" id="mi-c2tel" type="tel" placeholder="Tel&eacute;fono contacto 2"></div>
         </div>
       </div>
       <div class="modal-section">
@@ -592,7 +602,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
           <div class="modal-field"><span class="modal-field-label">Vencimiento (planilla)</span><div class="modal-field-value" id="m-venc-planilla"></div></div>
         </div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-save" onclick="guardarJ()">GUARDAR FICHA</button>
+          <button class="btn btn-save" id="btn-guardar-ficha" onclick="guardarJ()" style="display:none;">&#x1F4BE; GUARDAR FICHA</button>
         </div>
       </div>
       <div class="modal-section">
@@ -682,7 +692,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="filter-group"><label class="filter-label">Apellido *</label><input id="ns-apellido" class="edit-input" style="width:100%;"></div>
         <div class="filter-group"><label class="filter-label">Nombre *</label><input id="ns-nombre" class="edit-input" style="width:100%;"></div>
-        <div class="filter-group"><label class="filter-label">Nï¿½ Documento *</label><input id="ns-dni" type="text" class="edit-input" style="width:100%;"></div>
+        <div class="filter-group"><label class="filter-label">N&deg; Documento *</label><input id="ns-dni" type="text" class="edit-input" style="width:100%;"></div>
         <div class="filter-group"><label class="filter-label">Fecha de nacimiento</label><input id="ns-fnac" type="date" class="edit-input" style="width:100%;"></div>
         <div class="filter-group"><label class="filter-label">Genero</label>
           <select id="ns-sexo" class="edit-input" style="width:100%;"><option>Masculino</option><option>Femenino</option></select></div>
@@ -698,9 +708,9 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Contactos de emergencia</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div class="filter-group"><label class="filter-label">Contacto 1 - Nombre</label><input id="ns-c1nombre" class="edit-input" style="width:100%;" placeholder="Nombre completo"></div>
-            <div class="filter-group"><label class="filter-label">TelÃ©fono</label><input id="ns-c1tel" type="tel" class="edit-input" style="width:100%;" placeholder="Ej: 1122334455"></div>
+            <div class="filter-group"><label class="filter-label">Tel&eacute;fono</label><input id="ns-c1tel" type="tel" class="edit-input" style="width:100%;" placeholder="Ej: 1122334455"></div>
             <div class="filter-group"><label class="filter-label">Contacto 2 - Nombre</label><input id="ns-c2nombre" class="edit-input" style="width:100%;" placeholder="Nombre completo"></div>
-            <div class="filter-group"><label class="filter-label">TelÃ©fono</label><input id="ns-c2tel" type="tel" class="edit-input" style="width:100%;" placeholder="Ej: 1133445566"></div>
+            <div class="filter-group"><label class="filter-label">Tel&eacute;fono</label><input id="ns-c2tel" type="tel" class="edit-input" style="width:100%;" placeholder="Ej: 1133445566"></div>
           </div>
         </div>
       </div>
@@ -737,7 +747,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.3</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.4</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -957,11 +967,11 @@ function inicializar() {
       // Formato unificado: c[0]=DNI, c[1]=Nombre, c[2]=Plan/Concepto, c[3]=PeriodoDesde, c[4]=PeriodoHasta/Fecha, c[5]=FechaPago, c[6]=Monto, c[7]=Metodo
       if (r && r.cuotas) {
         r.cuotas = r.cuotas.map(function(c) {
-          // Detectar si viene de Sheets: c[3] es numÃ©rico (DNI) y c[0] es string tipo "abril 2026"
+          // Detectar si viene de Sheets: c[3] es num&eacute;rico (DNI) y c[0] es string tipo "abril 2026"
           var esDeSheets = c.length <= 9 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
           if (esDeSheets) {
             // Sheets: [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs, PeriodoHasta]
-            // â†’ [DNI, Nombre, Concepto, Hasta, Hasta, FechaPago, Monto, Metodo, '', Obs]
+            // -> [DNI, Nombre, Concepto, Hasta, Hasta, FechaPago, Monto, Metodo, '', Obs]
             var hasta = c[8] || c[1]; // col I = periodoHasta, fallback a fecha de pago
             return [c[3], c[4], c[2], hasta, hasta, c[1], c[5], c[6], '', c[7]||''];
           }
@@ -1540,7 +1550,16 @@ function abrirM(ai) {
     }).join('');
   document.getElementById('modalEdicion').classList.add('open');
 }
-function cerrarModal(){ document.getElementById('modalEdicion').classList.remove('open'); }
+function cerrarModal(){
+  document.getElementById('modalEdicion').classList.remove('open');
+  // Resetear modo edicion
+  var modal = document.querySelector('#modalEdicion .modal');
+  if(modal) modal.classList.remove('modal-edit-mode');
+  var btn = document.getElementById('btn-editar-ficha');
+  if(btn){ btn.innerHTML='&#x270F; Editar'; btn.classList.remove('activo'); }
+  var btnG = document.getElementById('btn-guardar-ficha');
+  if(btnG) btnG.style.display='none';
+}
 
 function guardarPlanJugador() {
   if(!itemSel) return;
@@ -1560,18 +1579,73 @@ function autoCat() {
   else alert('Sin ' + T('grupo') + ' para anio ' + anioNac + ' / ' + gen);
 }
 
+function toggleEditarFicha() {
+  var modal = document.querySelector('#modalEdicion .modal');
+  var btn = document.getElementById('btn-editar-ficha');
+  var btnGuardar = document.getElementById('btn-guardar-ficha');
+  var editando = modal.classList.toggle('modal-edit-mode');
+  if (editando) {
+    btn.innerHTML = '&#x2715; Cancelar';
+    btn.classList.add('activo');
+    btnGuardar.style.display = 'block';
+    // Poblar inputs con valores actuales
+    var f = DB.jugadores[itemSel.arrIdx];
+    var setVal = function(id, val) { var el = document.getElementById(id); if(el) el.value = val||''; };
+    setVal('mi-email', f[COL.EMAIL]||'');
+    setVal('mi-celular', f[COL.CELULAR]||f[COL.TEL]||'');
+    setVal('mi-domicilio', f[COL.DOMICILIO]||'');
+    setVal('mi-obs', f[COL.OBS]||'');
+    var c1 = (f[COL.CONTACTO1]||'').toString().split('|');
+    var c2 = (f[COL.CONTACTO2]||'').toString().split('|');
+    setVal('mi-c1nombre', c1[0]||'');
+    setVal('mi-c1tel',    c1[1]||'');
+    setVal('mi-c2nombre', c2[0]||'');
+    setVal('mi-c2tel',    c2[1]||'');
+  } else {
+    btn.innerHTML = '&#x270F; Editar';
+    btn.classList.remove('activo');
+    btnGuardar.style.display = 'none';
+  }
+}
+
 function guardarJ() {
   if(!itemSel) return;
-  var d = {sheet:itemSel.sheet, row:itemSel.row,
-    genero:document.getElementById('m-genero').value,
-    activo:document.getElementById('m-estado').value === 'true',
-    categoria:document.getElementById('m-cat-m').value};
+  var getV = function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
+  var c1 = [getV('mi-c1nombre'), getV('mi-c1tel')].filter(Boolean).join('|');
+  var c2 = [getV('mi-c2nombre'), getV('mi-c2tel')].filter(Boolean).join('|');
+  var d = {
+    sheet:    itemSel.sheet,
+    row:      itemSel.row,
+    genero:   document.getElementById('m-genero').value,
+    activo:   document.getElementById('m-estado').value === 'true',
+    categoria:document.getElementById('m-cat-m').value,
+    email:    getV('mi-email'),
+    celular:  getV('mi-celular'),
+    domicilio:getV('mi-domicilio'),
+    obs:      getV('mi-obs'),
+    contacto1:c1,
+    contacto2:c2
+  };
   mostrarLoader('Guardando ficha...');
   callScript({action:'updatePlayer', item:d, pass:TOKEN}, function(){
-    DB.jugadores[itemSel.arrIdx][COL.ACTIVO] = d.activo ? 'Si' : 'No';
-    DB.jugadores[itemSel.arrIdx][COL.CATEGORIA_APP] = d.categoria;
-    DB.jugadores[itemSel.arrIdx][COL.SEXO] = d.genero;
-    ocultarLoader(); cerrarModal(); renderPlayers(); toast('Ficha actualizada', 'ok');
+    var f = DB.jugadores[itemSel.arrIdx];
+    f[COL.ACTIVO]       = d.activo ? 'Si' : 'No';
+    f[COL.CATEGORIA_APP]= d.categoria;
+    f[COL.SEXO]         = d.genero;
+    f[COL.EMAIL]        = d.email;
+    f[COL.CELULAR]      = d.celular;
+    f[COL.DOMICILIO]    = d.domicilio;
+    f[COL.OBS]          = d.obs;
+    f[COL.CONTACTO1]    = d.contacto1;
+    f[COL.CONTACTO2]    = d.contacto2;
+    // Salir del modo edici&oacute;n
+    var modal = document.querySelector('#modalEdicion .modal');
+    modal.classList.remove('modal-edit-mode');
+    var btn = document.getElementById('btn-editar-ficha');
+    if(btn){ btn.innerHTML='&#x270F; Editar'; btn.classList.remove('activo'); }
+    var btnG = document.getElementById('btn-guardar-ficha');
+    if(btnG) btnG.style.display='none';
+    ocultarLoader(); renderPlayers(); toast('Ficha actualizada', 'ok');
   }, function(e){ alert('Error: ' + e); ocultarLoader(); });
 }
 
@@ -2106,7 +2180,7 @@ window.addEventListener('load', function() {
 function registrarHuella(pass) {
   if(!window.PublicKeyCredential) return;
   if(localStorage.getItem(WA_CRED_KEY)) return;
-  // Solo ofrecer en dispositivos tÃ¡ctiles (celular/tablet), no en desktop
+  // Solo ofrecer en dispositivos tactiles (celular/tablet), no en desktop
   if(!navigator.maxTouchPoints || navigator.maxTouchPoints === 0) return;
   setTimeout(function(){
     if(!confirm('Queres ingresar con huella / Face ID la proxima vez?')) return;
