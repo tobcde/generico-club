@@ -814,10 +814,10 @@ function cargarFoto(tipo, input){
       var prevApto = document.getElementById('prev-apto-wrap');
       if(file.type!=='application/pdf'){
         prevApto.innerHTML = '<img src="' + e.target.result + '" style="width:100%;max-height:200px;object-fit:contain;display:block;background:#111;border-radius:8px;">'
-          + '<button class="upload-preview-remove" onclick="quitarFoto('apto')" style="position:absolute;top:8px;right:8px;">&#x2715;</button>';
+          + '<button class="upload-preview-remove" onclick="quitarFoto(\'apto\')" style="position:absolute;top:8px;right:8px;">&#x2715;</button>';
         prevApto.style.position = 'relative';
       } else {
-        prevApto.innerHTML = '<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;">&#x1F4C4; '+file.name+'<button class="upload-preview-remove" style="position:relative;margin-left:10px;" onclick="quitarFoto('apto')">&#x2715;</button></div>';
+        prevApto.innerHTML = '<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;">&#x1F4C4; '+file.name+'<button class="upload-preview-remove" style="position:relative;margin-left:10px;" onclick="quitarFoto(\'apto\')">&#x2715;</button></div>';
       }
       prevApto.style.display='block';
       document.getElementById('zona-apto').style.display='none';
