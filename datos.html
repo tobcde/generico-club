@@ -551,7 +551,11 @@ function inicializarPaso4() {
   if(btnViejo) btnViejo.remove();
 
   if(fotoExistente && prevFotoImg) {
-    prevFotoImg.src = fotoExistente;
+    // Convertir URL de Drive a thumbnail para que se pueda mostrar sin login
+    var fotoThumb = fotoExistente;
+    var mDrive = fotoExistente.match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || fotoExistente.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+    if(mDrive) fotoThumb = 'https://drive.google.com/thumbnail?id=' + mDrive[1] + '&sz=w400';
+    prevFotoImg.src = fotoThumb;
     prevFotoWrap.style.display = 'block';
     zonaFoto.style.display = 'none';
     // Bot&oacute;n para cambiar foto
