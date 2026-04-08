@@ -197,7 +197,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
   .modal-grid{grid-template-columns:1fr;}
 }
 
-/* â”€â”€ MATRIZ ASISTENCIA â”€â”€ */
+/* -- MATRIZ ASISTENCIA -- */
 .mat-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .mat-table{border-collapse:collapse;font-size:11px;white-space:nowrap;}
 .mat-table th{background:var(--surface2);padding:4px 6px;border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);}
@@ -1069,19 +1069,38 @@ function estadoCuotaV2(f) {
 
   // Calcular saldo neto acumulado sumando col Saldo (&iacute;ndice 10) de todos los pagos
   // Si no hay col Saldo, fallback al m&eacute;todo anterior
-  // Calcular saldo neto acumulado de todos los pagos
-  // Sheets normalizado: saldo en c[10] (number)
-  // Memoria (length>=11, c[11]=timestamp): no tiene saldo -> calcular monto - plan
-  var saldoNeto = 0;
+  // Calcular saldo neto acumulado CORRECTAMENTE:
+  // Agrupar pagos por periodo, sumar montos dentro del periodo, comparar UNA sola vez contra el plan
+  // Esto maneja pagos parciales (ej: 3 pagos de $5000 en abril = $15000 = al dia)
+  var periodoMap = {}; // periodo -> {montoTotal, tieneSaldoSheet, saldoSheet}
+
   pagos.forEach(function(c) {
+    // Identificar el periodo: usar c[3] (periodoDesde) o c[4] (hasta) como clave
+    var periodo = (c[3] || c[4] || 'sin-periodo').toString().substring(0, 7); // YYYY-MM
+    if(!periodoMap[periodo]) periodoMap[periodo] = {montoTotal:0, saldoSheet:0, tieneSaldoSheet:false};
+
     var tieneTimestamp = c.length >= 12 && typeof c[11] === 'number';
     var saldoEnSheet   = !tieneTimestamp && c[10] !== undefined && c[10] !== null && c[10] !== '' && typeof c[10] === 'number';
+
+    periodoMap[periodo].montoTotal += Number(c[6]) || 0;
+
     if(saldoEnSheet) {
-      saldoNeto += Number(c[10]) || 0;
+      // Si la sheet ya tiene saldo calculado, acumularlo (puede haber varios pagos del mismo periodo)
+      periodoMap[periodo].saldoSheet += Number(c[10]) || 0;
+      periodoMap[periodo].tieneSaldoSheet = true;
+    }
+  });
+
+  // Sumar el saldo de cada periodo
+  var saldoNeto = 0;
+  Object.keys(periodoMap).forEach(function(periodo) {
+    var p = periodoMap[periodo];
+    if(p.tieneSaldoSheet) {
+      // Recalcular desde el total del periodo (m&aacute;s preciso que sumar saldos individuales)
+      saldoNeto += p.montoTotal - planMonto;
     } else {
-      // memoria o Sheets sin col J: calcular monto - plan
-      var montoC = Number(c[6]) || 0;
-      if(montoC > 0) saldoNeto += montoC - planMonto;
+      // Sin col J: calcular desde montoTotal del periodo
+      if(p.montoTotal > 0) saldoNeto += p.montoTotal - planMonto;
     }
   });
 
