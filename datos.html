@@ -642,10 +642,17 @@ function renderVerificacion(findResult) {
     var _c2p = (S.sistemaData.contacto2||'').split('|');
     S.sistemaData.c1nombre = _c1p[0]||''; S.sistemaData.c1tel = _c1p[1]||'';
     S.sistemaData.c2nombre = _c2p[0]||''; S.sistemaData.c2tel = _c2p[1]||'';
+    // Convertir campos num&eacute;ricos a string para comparaci&oacute;n correcta
+    ['dni','celular','tel','categoria','plan'].forEach(function(k){
+      if(S.sistemaData[k] !== undefined && S.sistemaData[k] !== null)
+        S.sistemaData[k] = S.sistemaData[k].toString();
+    });
     document.getElementById('alert-enc-msg').innerHTML =
       '<b>' + (findResult.datos.apellido||'') + ', ' + (findResult.datos.nombre||'') + '</b> encontrado en el sistema. Verific&aacute; los datos y edit&aacute; lo que sea necesario.';
     encEl.style.display='flex';
-    buildTabla(); cardComp.style.display='block'; btnSig3.disabled=false;
+    try { buildTabla(); } catch(e) { console.error('buildTabla error:', e); }
+    cardComp.style.display='block';
+    btnSig3.disabled=false;
   }
 }
 
@@ -666,8 +673,8 @@ function buildTabla() {
   function renderSeccion(label, campos) {
     var html = "<div style='font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);'>" + label + "</div>";
     campos.forEach(function(c) {
-      var ocrVal = (S.ocrData && S.ocrData[c.key]) ? S.ocrData[c.key] : "";
-      var sysVal = (S.sistemaData && S.sistemaData[c.key]) ? S.sistemaData[c.key] : "";
+      var ocrVal = (S.ocrData && S.ocrData[c.key] !== undefined && S.ocrData[c.key] !== null) ? S.ocrData[c.key].toString() : "";
+      var sysVal = (S.sistemaData && S.sistemaData[c.key] !== undefined && S.sistemaData[c.key] !== null) ? S.sistemaData[c.key].toString() : "";
       if (c.tipo === "date") { ocrVal = dmy2ymd(ocrVal); sysVal = dmy2ymd(sysVal); }
 
       var rowCls = "";
@@ -714,7 +721,7 @@ function buildTabla() {
     renderSeccion('Contactos de emergencia', camposContacto);
 }
 
-function normalizar(s){ return (s||'').toString().toLowerCase().trim().replace(/\s+/g,' '); }
+function normalizar(s){ return (s===null||s===undefined?'':s.toString()).toLowerCase().trim().replace(/\s+/g,' '); }
 
 function getCamposEditados() {
   var out={};
