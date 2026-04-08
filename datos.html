@@ -1,429 +1,923 @@
-/**
- * SISTEMA DE GESTION DIGITAL - APP AUTOREGISTRO
- * Backend Google Apps Script - Version Generica
- *
- * CONFIGURACION INICIAL:
- *   SS_ID     -> ID de la Google Sheet del cliente
- *   FOLDER_ID -> ID de la carpeta Drive donde se guardan las fotos
- *   ADMIN_PASS -> contraseÃ±a de acceso a esta app (diferente al admin principal)
- *
- * La clave GEMINI_KEY se guarda en Script Properties:
- *   Proyecto GAS -> ConfiguraciÃ³n -> Propiedades de script -> GEMINI_KEY
- */
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title id="page-title">Sistema de Gesti&oacute;n - Completar Datos</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #1a7a3c;
+  --primary-dark: #0f5228;
+  --secondary: #c9a227;
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2230;
+  --border: #2a3444;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --red: #f85149;
+  --red-dim: rgba(248,81,73,.12);
+  --red-border: rgba(248,81,73,.35);
+  --primary-dim: rgba(26,122,60,.12);
+  --primary-border: rgba(26,122,60,.35);
+  --secondary-dim: rgba(201,162,39,.12);
+  --secondary-border: rgba(201,162,39,.35);
+  --naranja-dim: rgba(210,100,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
-var SS_ID      = '1Naod-N-rVxaDwh09pnQ-KTnrlz-TzhxwOfjjtFBFFCs';
-var FOLDER_ID  = '1i3wfyc2-XLU5jqQ8P4fZ8zcHyXUyJ18z';
-var ADMIN_PASS = 'admin';
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
+#loader.oculto{display:none;}
+.spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loader-msg{margin-top:14px;color:var(--muted);font-size:13px;text-align:center;}
 
-function getGeminiKey() {
-  return PropertiesService.getScriptProperties().getProperty('GEMINI_KEY') || '';
+/* HEADER */
+.app-header{background:var(--surface);border-bottom:2px solid var(--primary);padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+.app-header img{width:38px;height:38px;border-radius:8px;object-fit:contain;}
+.app-header h1{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;}
+.app-header h1 span{color:var(--secondary);}
+
+/* PROGRESS */
+.progress-bar{display:flex;align-items:center;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);gap:0;overflow-x:auto;}
+.progress-step{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.progress-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;border:2px solid var(--border);color:var(--muted);background:var(--bg);transition:all .3s;}
+.progress-dot.activo{border-color:var(--primary);color:var(--primary);background:var(--primary-dim);}
+.progress-dot.listo{border-color:var(--primary);color:#fff;background:var(--primary);}
+.progress-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-family:'Barlow Condensed',sans-serif;white-space:nowrap;}
+.progress-label.activo{color:var(--text);}
+.progress-sep{width:20px;height:2px;background:var(--border);margin:0 4px;flex-shrink:0;}
+.progress-sep.listo{background:var(--primary);}
+
+/* MAIN */
+.main{padding:16px;max-width:700px;margin:0 auto;}
+.step{display:none;}
+.step.activo{display:block;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.card-icon{font-size:20px;}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.card-body{padding:16px;}
+.card-desc{color:var(--muted);font-size:13px;margin-bottom:16px;line-height:1.5;}
+
+/* CAMARA */
+.cam-wrap{position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.cam-wrap video{width:100%;height:100%;object-fit:cover;}
+.cam-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.cam-guide{position:absolute;width:85%;height:65%;border:3px solid var(--secondary);border-radius:10px;box-shadow:0 0 0 2000px rgba(0,0,0,.5);}
+.cam-scan{position:absolute;width:83%;height:2px;background:linear-gradient(90deg,transparent,var(--primary),transparent);animation:scan 2s linear infinite;}
+@keyframes scan{0%{top:18%;}100%{top:80%;}}
+.cam-label{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:var(--secondary);font-size:12px;padding:4px 12px;border-radius:20px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;white-space:nowrap;}
+.cam-btns{display:flex;gap:10px;margin-bottom:12px;}
+.preview-wrap{position:relative;border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.preview-wrap img{width:100%;max-height:220px;object-fit:contain;border-radius:10px;display:block;background:#111;}
+.preview-ok{position:absolute;top:10px;right:10px;background:var(--primary);color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+
+/* BOTONES */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.btn-full{width:100%;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);}
+.btn-primary:disabled{background:var(--muted);cursor:not-allowed;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-secondary{background:var(--secondary);color:#000;}
+.btn-red{background:var(--red-dim);border:1px solid var(--red-border);color:var(--red);}
+.btn-sm{padding:8px 14px;font-size:13px;}
+
+/* TABLA COMPARACION */
+.comp-table{width:100%;border-collapse:collapse;font-size:13px;}
+.comp-table th{padding:8px 12px;background:var(--surface2);font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border:1px solid var(--border);text-align:left;}
+.comp-table td{padding:0;border:1px solid var(--border);vertical-align:middle;}
+.comp-label{padding:10px 12px;color:var(--muted);font-size:12px;background:var(--surface2);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;border-right:1px solid var(--border);}
+.comp-ocr{padding:10px 12px;color:var(--text);font-size:13px;}
+.comp-edit{padding:4px;}
+.comp-edit input,.comp-edit select{width:100%;background:transparent;border:none;color:var(--text);font-size:13px;padding:7px 8px;font-family:'Barlow',sans-serif;outline:none;}
+.comp-edit input:focus,.comp-edit select:focus{background:var(--primary-dim);}
+.row-ok{background:var(--primary-dim);}
+.row-vacio{background:var(--secondary-dim);}
+.row-diff{background:var(--naranja-dim);}
+.badge-ok{display:inline-block;width:18px;height:18px;background:var(--primary);border-radius:50%;text-align:center;line-height:18px;font-size:10px;color:#fff;margin-left:6px;}
+.badge-warn{display:inline-block;width:18px;height:18px;background:var(--secondary);border-radius:50%;text-align:center;line-height:18px;font-size:10px;color:#000;margin-left:6px;}
+
+/* UPLOAD FOTO */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--primary);background:var(--primary-dim);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-zone-icon{font-size:36px;margin-bottom:8px;}
+.upload-zone-label{color:var(--muted);font-size:13px;}
+.upload-preview{margin-top:12px;border-radius:10px;overflow:hidden;position:relative;}
+.upload-preview img{width:100%;max-height:250px;object-fit:cover;display:block;}
+.upload-preview-remove{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* RESUMEN */
+.resumen-section{margin-bottom:16px;}
+.resumen-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.resumen-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(42,52,68,.5);font-size:13px;}
+.resumen-row:last-child{border-bottom:none;}
+.resumen-label{color:var(--muted);}
+.resumen-val{font-weight:600;text-align:right;max-width:60%;}
+
+/* ALERTS */
+.alert{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.alert-primary{background:var(--primary-dim);border:1px solid var(--primary-border);color:#6de097;}
+.alert-secondary{background:var(--secondary-dim);border:1px solid var(--secondary-border);color:var(--secondary);}
+.alert-red{background:var(--red-dim);border:1px solid var(--red-border);color:var(--red);}
+
+/* SUCCESS */
+.success-screen{text-align:center;padding:40px 20px;}
+.success-icon{font-size:64px;margin-bottom:16px;}
+.success-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);margin-bottom:8px;}
+.success-sub{color:var(--muted);font-size:14px;margin-bottom:24px;}
+
+/* TOAST */
+/* â”€â”€ CAMPO COMP â”€â”€ */
+.campo-comp{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.campo-comp.row-ok{border-color:var(--primary-border);background:var(--primary-dim);}
+.campo-comp.row-vacio{border-color:var(--secondary-border);background:var(--secondary-dim);}
+.campo-comp.row-diff{border-color:rgba(210,100,0,.35);background:var(--naranja-dim);}
+.campo-comp-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.campo-comp-ocr{font-size:12px;color:var(--muted);padding:4px 8px;background:rgba(0,0,0,.2);border-radius:6px;margin-bottom:6px;}
+.campo-comp-ocr b{color:var(--text);font-size:13px;}
+.campo-comp input,.campo-comp select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px;border-radius:6px;font-family:'Barlow',sans-serif;outline:none;margin-top:2px;}
+.campo-comp input:focus,.campo-comp select:focus{border-color:var(--primary);}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:20px;font-size:13px;display:none;z-index:9999;white-space:nowrap;}
+#toast.ok{background:var(--primary);color:#fff;}
+#toast.err{background:var(--red);color:#fff;}
+</style>
+<link rel="manifest" href="manifest_datos.json">
+<meta name="theme-color" content="#f97316">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-datos-192.png">
+</head>
+<body>
+
+<div id="loader"><div class="spinner"></div><p id="loader-msg">Iniciando...</p></div>
+
+<div class="app-header">
+  <img id="header-logo" src="" alt="" onerror="this.style.display='none'" style="display:none;">
+  <h1 id="header-titulo">Cargando...</h1>
+</div>
+
+<div class="progress-bar" id="progress-bar">
+  <div class="progress-step">
+    <div class="progress-dot activo" id="pd1">1</div>
+    <div class="progress-label activo" id="pl1">Doc. Frente</div>
+  </div>
+  <div class="progress-sep" id="ps1"></div>
+  <div class="progress-step">
+    <div class="progress-dot" id="pd2">2</div>
+    <div class="progress-label" id="pl2">Doc. Dorso</div>
+  </div>
+  <div class="progress-sep" id="ps2"></div>
+  <div class="progress-step">
+    <div class="progress-dot" id="pd3">3</div>
+    <div class="progress-label" id="pl3">Verificar</div>
+  </div>
+  <div class="progress-sep" id="ps3"></div>
+  <div class="progress-step">
+    <div class="progress-dot" id="pd4">4</div>
+    <div class="progress-label" id="pl4">Foto &amp; Docs</div>
+  </div>
+  <div class="progress-sep" id="ps4"></div>
+  <div class="progress-step">
+    <div class="progress-dot" id="pd5">5</div>
+    <div class="progress-label" id="pl5">Confirmar</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- PASO 1: FRENTE DOC -->
+  <div class="step activo" id="step1">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#x1F4F7;</span>
+        <span class="card-title">Escanear Documento &mdash; FRENTE</span>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Sac&aacute; o sub&iacute; una foto del <b>frente del documento de identidad</b>. Asegurate que se vean bien todos los datos.</p>
+        <div id="cam1-wrap" class="cam-wrap" style="display:none;">
+          <video id="cam1-video" autoplay playsinline muted></video>
+          <div class="cam-overlay">
+            <div class="cam-guide"></div>
+            <div class="cam-scan"></div>
+          </div>
+          <div class="cam-label">Frente del documento</div>
+        </div>
+        <div id="prev1-wrap" class="preview-wrap" style="display:none;">
+          <img id="prev1-img" src="" alt="Documento frente">
+          <div class="preview-ok">&#x2713;</div>
+        </div>
+        <div class="cam-btns">
+          <button class="btn btn-outline btn-full" id="btn-cam1" onclick="toggleCam(1)">&#x1F4F7; Usar c&aacute;mara</button>
+          <label class="btn btn-outline btn-full" style="cursor:pointer;">
+            &#x1F4C1; Subir imagen
+            <input type="file" accept="image/*" style="display:none;" onchange="cargarImagen(1,this)">
+          </label>
+        </div>
+        <button class="btn btn-primary btn-full" id="btn-capturar1" onclick="capturar(1)" style="display:none;">&#x23FA; Capturar</button>
+        <button class="btn btn-primary btn-full" id="btn-sig1" onclick="irPaso(2)" disabled>
+          Continuar &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2: DORSO DOC -->
+  <div class="step" id="step2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#x1F4F7;</span>
+        <span class="card-title">Escanear Documento &mdash; DORSO</span>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Ahora sub&iacute; o sac&aacute; foto del <b>dorso del documento</b>. Podemos procesarlo sin el dorso, pero con &eacute;l el OCR es m&aacute;s preciso.</p>
+        <div id="cam2-wrap" class="cam-wrap" style="display:none;">
+          <video id="cam2-video" autoplay playsinline muted></video>
+          <div class="cam-overlay">
+            <div class="cam-guide"></div>
+            <div class="cam-scan"></div>
+          </div>
+          <div class="cam-label">Dorso del documento</div>
+        </div>
+        <div id="prev2-wrap" class="preview-wrap" style="display:none;">
+          <img id="prev2-img" src="" alt="Documento dorso">
+          <div class="preview-ok">&#x2713;</div>
+        </div>
+        <div class="cam-btns">
+          <button class="btn btn-outline btn-full" id="btn-cam2" onclick="toggleCam(2)">&#x1F4F7; Usar c&aacute;mara</button>
+          <label class="btn btn-outline btn-full" style="cursor:pointer;">
+            &#x1F4C1; Subir imagen
+            <input type="file" accept="image/*" style="display:none;" onchange="cargarImagen(2,this)">
+          </label>
+        </div>
+        <button class="btn btn-primary btn-full" id="btn-capturar2" onclick="capturar(2)" style="display:none;">&#x23FA; Capturar</button>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button class="btn btn-outline" onclick="irPaso(1)" style="flex:1;">&larr; Volver</button>
+          <button class="btn btn-primary" id="btn-sig2" onclick="procesarOCR()" style="flex:2;">
+            &#x1F50D; Procesar documento
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 3: VERIFICACION -->
+  <div class="step" id="step3">
+    <div id="alert-dni-no-encontrado" class="alert alert-secondary" style="display:none;">
+      <span class="alert-icon">&#x26A0;</span>
+      <div>
+        <b id="lbl-no-enc-titulo">Registro no encontrado.</b><br>
+        El DNI <span id="dni-no-enc"></span> no est&aacute; en la base de datos.
+        &iquest;Quer&eacute;s crearlo como nuevo?
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <button class="btn btn-outline btn-sm" onclick="irPaso(1)">Cancelar</button>
+          <button class="btn btn-secondary btn-sm" onclick="modoNuevo()" id="btn-crear-nuevo">Crear nuevo &rarr;</button>
+        </div>
+      </div>
+    </div>
+    <div id="alert-dni-encontrado" class="alert alert-primary" style="display:none;">
+      <span class="alert-icon">&#x2713;</span>
+      <div id="alert-enc-msg"></div>
+    </div>
+    <div class="card" id="card-comp" style="display:none;">
+      <div class="card-header">
+        <span class="card-icon">&#x1F4CB;</span>
+        <span class="card-title">Verificar y Rectificar Datos</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div style="padding:12px 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);">
+          <span style="background:var(--primary-dim);border:1px solid var(--primary-border);color:#6de097;padding:2px 8px;border-radius:10px;margin-right:6px;">&#x2713; Coincide</span>
+          <span style="background:var(--secondary-dim);border:1px solid var(--secondary-border);color:var(--secondary);padding:2px 8px;border-radius:10px;margin-right:6px;">&#x270F; Vac&iacute;o / completar</span>
+          <span style="background:var(--naranja-dim);border:1px solid rgba(210,100,0,.35);color:#f0a060;padding:2px 8px;border-radius:10px;">&#x26A0; Difiere</span>
+        </div>
+        <div id="comp-tbody" style="padding:8px;"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline" onclick="irPaso(2)" style="flex:1;">&larr; Volver</button>
+      <button class="btn btn-primary" id="btn-sig3" onclick="irPaso(4)" style="flex:2;" disabled>
+        Continuar &rarr;
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 4: FOTO Y DOCUMENTOS -->
+  <div class="step" id="step4">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#x1F464;</span>
+        <span class="card-title" id="lbl-foto-titulo">Foto del Socio</span>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Foto tipo <b>carnet</b>: cara y cuello de frente, fondo claro, buena iluminaci&oacute;n.</p>
+        <div id="prev-foto-wrap" class="upload-preview" style="display:none;">
+          <img id="prev-foto-img" src="" alt="Foto" style="max-height:220px;object-fit:contain;">
+          <button class="upload-preview-remove" onclick="quitarFoto('foto')">&#x2715;</button>
+        </div>
+        <div id="zona-foto" style="display:block;">
+          <div style="margin-bottom:10px;">
+            <label class="btn btn-outline btn-full" style="cursor:pointer;">
+              &#x1F4F7; Abrir c&aacute;mara
+              <input type="file" accept="image/*" capture="user" style="display:none;" onchange="cargarFoto('foto',this)">
+            </label>
+          </div>
+          <label class="btn btn-outline btn-full" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            &#x1F4C1; Elegir de galer&iacute;a
+            <input type="file" accept="image/*" style="display:none;" onchange="cargarFoto('foto',this)">
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#x1F4CB;</span>
+        <span class="card-title" id="lbl-apto-titulo">Certificado / Apto</span>
+      </div>
+      <div class="card-body">
+        <p class="card-desc" id="lbl-apto-desc">Sub&iacute; el certificado o apto. Puede ser imagen o PDF.</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px;background:var(--surface2);border-radius:8px;">
+          <input type="checkbox" id="tiene-apto" style="width:18px;height:18px;accent-color:var(--primary);cursor:pointer;" onchange="toggleApto()">
+          <label for="tiene-apto" style="font-size:14px;font-weight:600;cursor:pointer;" id="lbl-tiene-apto">Tiene certificado vigente</label>
+        </div>
+        <div id="apto-upload-wrap" style="display:none;">
+          <div id="prev-apto-wrap" class="upload-preview" style="display:none;">
+            <img id="prev-apto-img" src="" alt="Certificado" style="max-height:200px;object-fit:contain;background:#111;">
+            <button class="upload-preview-remove" onclick="quitarFoto('apto')">&#x2715;</button>
+          </div>
+          <div class="upload-zone" id="zona-apto" style="display:block;">
+            <input type="file" accept="image/*,application/pdf" onchange="cargarFoto('apto',this)">
+            <div class="upload-zone-icon">&#x1F4C4;</div>
+            <div class="upload-zone-label">Subir imagen o PDF del certificado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline" onclick="irPaso(3)" style="flex:1;">&larr; Volver</button>
+      <button class="btn btn-primary" onclick="irPaso(5)" style="flex:2;">Continuar &rarr;</button>
+    </div>
+  </div>
+
+  <!-- PASO 5: CONFIRMAR -->
+  <div class="step" id="step5">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">&#x2713;</span>
+        <span class="card-title">Confirmar y Guardar</span>
+      </div>
+      <div class="card-body">
+        <div id="resumen-datos"></div>
+        <div id="resumen-fotos"></div>
+        <div class="alert alert-secondary" style="margin-bottom:14px;">
+          <span class="alert-icon">&#x26A0;</span>
+          <div>Al confirmar se actualizar&aacute; la base de datos y se guardar&aacute;n las im&aacute;genes en Drive.</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-outline" onclick="irPaso(4)" style="flex:1;">&larr; Volver</button>
+          <button class="btn btn-primary" onclick="confirmarGuardar()" style="flex:2;">&#x1F4BE; GUARDAR TODO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 6: &Eacute;XITO -->
+  <div class="step" id="step6">
+    <div class="success-screen">
+      <div class="success-icon">&#x1F3C6;</div>
+      <div class="success-title">Datos Guardados</div>
+      <div class="success-sub" id="success-msg">Los datos fueron actualizados correctamente.</div>
+      <button class="btn btn-primary" onclick="reiniciar()" style="min-width:200px;" id="btn-reiniciar">
+        &#x21BB; Cargar otro registro
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.4</div>
+
+<script>
+// â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrXrQeRBBlA59cU_pPUb_iGr18YJowAQcBR2v1oYM2N9tLJVwdzQeM3A0eegdnczqCMA/exec';
+var PASS = 'admin';
+
+// â”€â”€ ESTADO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+var S = {
+  paso: 1,
+  imgFront: null,
+  imgBack: null,
+  foto: null,
+  apto: null,
+  aptoType: null,
+  ocrData: null,
+  sistemaData: null,
+  esNuevo: false,
+  fila: null,
+  camStreams: {}
+};
+
+var INST = {}; // datos de la instituci&oacute;n
+
+// â”€â”€ CAMPOS COMPARABLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+var CAMPOS = [
+  {key:'apellido',  label:'Apellido',            editable:true,  tipo:'text'},
+  {key:'nombre',    label:'Nombre',              editable:true,  tipo:'text'},
+  {key:'dni',       label:'DNI',                 editable:false},
+  {key:'fechaNac',  label:'Fecha nacimiento',    editable:true, tipo:'date'},
+  {key:'sexo',      label:'Sexo',                editable:true, tipo:'select', opts:['','Masculino','Femenino']},
+  {key:'domicilio', label:'Domicilio',           editable:true, tipo:'text'},
+  {key:'email',     label:'Email de contacto - Comprobantes y avisos', editable:true, tipo:'email'},
+  {key:'celular',   label:'Celular',             editable:true, tipo:'tel'},
+  {key:'c1nombre',  label:'Contacto 1 - Nombre', editable:true, tipo:'text'},
+  {key:'c1tel',     label:'Contacto 1 - Tel',    editable:true, tipo:'tel'},
+  {key:'c2nombre',  label:'Contacto 2 - Nombre', editable:true, tipo:'text'},
+  {key:'c2tel',     label:'Contacto 2 - Tel',    editable:true, tipo:'tel'},
+];
+
+// â”€â”€ BRANDING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function aplicarBranding(inst) {
+  INST = inst || {};
+  var p   = INST.colorPrimario   || '#1a7a3c';
+  var sec = INST.colorSecundario || '#c9a227';
+  var r   = document.documentElement;
+  r.style.setProperty('--primary', p);
+  r.style.setProperty('--primary-dark', ajustarBrillo(p, -20));
+  r.style.setProperty('--secondary', sec);
+  r.style.setProperty('--primary-dim',    hexToRgba(p, 0.12));
+  r.style.setProperty('--primary-border', hexToRgba(p, 0.35));
+  r.style.setProperty('--secondary-dim',    hexToRgba(sec, 0.12));
+  r.style.setProperty('--secondary-border', hexToRgba(sec, 0.35));
+
+  var nombre = INST.nombre || INST.nombreCorto || 'Sistema';
+  document.getElementById('page-title').innerText = nombre + ' - Completar Datos';
+
+  var logo = INST.logoUrl || '';
+  var hdrLogo = document.getElementById('header-logo');
+  if (logo) { hdrLogo.src = logo; hdrLogo.style.display = 'block'; }
+
+  // Titulo del header con terminologia
+  var tSocio = INST.terminologiaSocio || 'Socio';
+  document.getElementById('header-titulo').innerHTML = nombre + ' &mdash; <span>Completar Datos</span>';
+  document.getElementById('lbl-foto-titulo').innerText  = 'Foto del ' + tSocio;
+  document.getElementById('lbl-apto-titulo').innerText  = 'Certificado / Apto';
+  document.getElementById('lbl-tiene-apto').innerText   = 'Tiene certificado vigente';
+  document.getElementById('btn-reiniciar').innerText    = '&#x21BA; Cargar otro ' + tSocio.toLowerCase();
 }
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function normalizarDni(dni) {
-  return dni ? dni.toString().replace(/\./g, '').replace(/\s/g, '').trim() : '';
+function hexToRgba(hex, alpha) {
+  var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+alpha+')';
+}
+function ajustarBrillo(hex, amt) {
+  var r=Math.max(0,Math.min(255,parseInt(hex.slice(1,3),16)+amt));
+  var g=Math.max(0,Math.min(255,parseInt(hex.slice(3,5),16)+amt));
+  var b=Math.max(0,Math.min(255,parseInt(hex.slice(5,7),16)+amt));
+  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
 }
 
-function jsonOut(obj) {
-  var out = ContentService.createTextOutput(JSON.stringify(obj));
-  out.setMimeType(ContentService.MimeType.JSON);
+// â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function mostrarLoader(msg){ document.getElementById('loader').classList.remove('oculto'); document.getElementById('loader-msg').innerText = msg||'Procesando...'; }
+function ocultarLoader(){ document.getElementById('loader').classList.add('oculto'); }
+
+function toast(msg, tipo){
+  var el = document.getElementById('toast');
+  el.innerText = msg; el.className = tipo||'ok'; el.style.display='block';
+  setTimeout(function(){ el.style.display='none'; }, 3000);
+}
+
+function callAPI(action, data, cb, cbErr) {
+  var postActions = ['ocrDocumento', 'saveFotosDrive'];
+  var usePost = postActions.indexOf(action) >= 0;
+
+  if (usePost) {
+    var body = Object.assign({action: action, token: PASS}, data);
+    fetch(SCRIPT_URL, {
+      method: 'POST', redirect: 'follow',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.text(); })
+      .then(function(t){
+        var d; try{ d=JSON.parse(t); }catch(e){ d={error:'Respuesta inv&aacute;lida'}; }
+        if(d && d.error){ if(cbErr) cbErr(d.error); else toast(d.error,'err'); }
+        else { if(cb) cb(d); }
+      }).catch(function(e){ if(cbErr) cbErr('Sin conexi&oacute;n'); else toast('Sin conexi&oacute;n','err'); });
+  } else {
+    var url = SCRIPT_URL + '?action=' + action + '&token=' + encodeURIComponent(PASS)
+      + '&data=' + encodeURIComponent(JSON.stringify(data));
+    fetch(url, {method:'GET', redirect:'follow'})
+      .then(function(r){ return r.text(); })
+      .then(function(t){
+        var d; try{ d=JSON.parse(t); }catch(e){ d={error:'Respuesta inv&aacute;lida'}; }
+        if(d && d.error){ if(cbErr) cbErr(d.error); else toast(d.error,'err'); }
+        else { if(cb) cb(d); }
+      }).catch(function(e){ if(cbErr) cbErr('Sin conexi&oacute;n'); else toast('Sin conexi&oacute;n','err'); });
+  }
+}
+
+// â”€â”€ PROGRESO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function irPaso(n) {
+  document.getElementById('step'+S.paso).classList.remove('activo');
+  for(var i=1;i<=5;i++){
+    var dot=document.getElementById('pd'+i), lbl=document.getElementById('pl'+i), sep=document.getElementById('ps'+i);
+    dot.className='progress-dot'; lbl.className='progress-label'; if(sep) sep.className='progress-sep';
+    if(i<n){ dot.className+=' listo'; dot.innerHTML='&#x2713;'; if(sep) sep.className+=' listo'; }
+    else if(i===n){ dot.className+=' activo'; dot.innerHTML=i; lbl.className+=' activo'; }
+    else{ dot.innerHTML=i; }
+  }
+  S.paso = n;
+  document.getElementById('step'+n).classList.add('activo');
+  window.scrollTo(0,0);
+  if(n===5) renderResumen();
+  if(n===4) inicializarPaso4();
+}
+
+function inicializarPaso4() {
+  var aptoExistente = S.sistemaData && S.sistemaData.aptoUrl;
+  var chk = document.getElementById('tiene-apto');
+  var wrap = document.getElementById('apto-upload-wrap');
+
+  if(aptoExistente) {
+    // Ya tiene apto: marcar checkbox, mostrar link al actual + opci&oacute;n de reemplazar
+    chk.checked = true;
+    wrap.style.display = 'block';
+    // Mostrar apto actual con opci&oacute;n de reemplazar
+    var prevWrap = document.getElementById('prev-apto-wrap');
+    var zonaApto = document.getElementById('zona-apto');
+    prevWrap.innerHTML =
+      '<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;">'
+      + '<span style="color:var(--primary);">&#x2713; Certificado vigente en el sistema</span>'
+      + '<a href="' + aptoExistente + '" target="_blank" style="color:var(--secondary);font-size:12px;text-decoration:none;">Ver actual</a>'
+      + '</div>';
+    prevWrap.style.display = 'block';
+    // Mostrar zona de upload para reemplazar
+    zonaApto.style.display = 'block';
+    var zonaLabel = zonaApto.querySelector('.upload-zone-label');
+    if(zonaLabel) zonaLabel.innerText = 'Subir nuevo certificado (reemplaza el actual)';
+  } else {
+    // No tiene apto: estado limpio
+    chk.checked = false;
+    wrap.style.display = 'none';
+    var prevWrap = document.getElementById('prev-apto-wrap');
+    if(!S.apto) prevWrap.style.display = 'none';
+  }
+}
+
+// â”€â”€ C&Aacute;MARA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function toggleCam(n) {
+  var wrap=document.getElementById('cam'+n+'-wrap'), video=document.getElementById('cam'+n+'-video'), btnCap=document.getElementById('btn-capturar'+n);
+  if(wrap.style.display==='none'){
+    wrap.style.display='block'; btnCap.style.display='flex';
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
+      .then(function(stream){ S.camStreams[n]=stream; video.srcObject=stream; })
+      .catch(function(){ toast('No se pudo acceder a la c&aacute;mara','err'); wrap.style.display='none'; btnCap.style.display='none'; });
+  } else { detenerCam(n); }
+}
+
+function detenerCam(n){
+  var stream=S.camStreams[n]; if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+  delete S.camStreams[n];
+  var wrap=document.getElementById('cam'+n+'-wrap'), btnCap=document.getElementById('btn-capturar'+n);
+  if(wrap) wrap.style.display='none'; if(btnCap) btnCap.style.display='none';
+}
+
+function capturar(n) {
+  var video = document.getElementById('cam'+n+'-video');
+  var vw = video.videoWidth || 640;
+  var vh = video.videoHeight || 480;
+  // Recortar solo el area del recuadro guia (85% ancho, 65% alto, centrado)
+  var cropW = Math.round(vw * 0.85);
+  var cropH = Math.round(vh * 0.65);
+  var cropX = Math.round((vw - cropW) / 2);
+  var cropY = Math.round((vh - cropH) / 2);
+  var canvas = document.createElement('canvas');
+  canvas.width = cropW;
+  canvas.height = cropH;
+  canvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  setImagen(n, canvas.toDataURL('image/jpeg', 0.90));
+  detenerCam(n);
+}
+
+function cargarImagen(n, input) {
+  var file=input.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){ setImagen(n, e.target.result); };
+  reader.readAsDataURL(file);
+}
+
+function normalizarDni(dni){ return dni ? dni.toString().replace(/\./g,'').replace(/\s/g,'').trim() : ''; }
+function dmy2ymd(s){ if(!s) return ''; var p=s.split('/'); if(p.length===3&&p[2].length===4) return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0'); return s; }
+function ymd2dmy(s){ if(!s) return ''; var p=s.split('-'); if(p.length===3) return p[2]+'/'+p[1]+'/'+p[0]; return s; }
+
+function comprimirImagen(dataUrl, maxW, maxH, calidad, cb) {
+  var img=new Image();
+  img.onload=function(){
+    var w=img.width, h=img.height;
+    if(w>maxW||h>maxH){ var ratio=Math.min(maxW/w,maxH/h); w=Math.round(w*ratio); h=Math.round(h*ratio); }
+    var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    cb(canvas.toDataURL('image/jpeg', calidad));
+  };
+  img.src=dataUrl;
+}
+
+function setImagen(n, data) {
+  comprimirImagen(data, 1200, 1200, 0.75, function(compressed){
+    if(n===1) S.imgFront=compressed; else S.imgBack=compressed;
+    var prevWrap=document.getElementById('prev'+n+'-wrap'), prevImg=document.getElementById('prev'+n+'-img');
+    prevImg.src=compressed; prevWrap.style.display='block';
+    var btnSig=document.getElementById('btn-sig'+n); if(btnSig) btnSig.disabled=false;
+  });
+}
+
+// â”€â”€ OCR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function procesarOCR() {
+  if(!S.imgFront){ toast('Necesit&aacute;s el frente del documento','err'); return; }
+  mostrarLoader('Leyendo documento con inteligencia artificial...');
+  callAPI('ocrDocumento', {imgFront:S.imgFront, imgBack:S.imgBack||null}, function(r){
+    if(!r.ok){ ocultarLoader(); toast(r.error||'Error en OCR','err'); return; }
+    S.ocrData = r.data;
+    S.ocrData.dni = normalizarDni(S.ocrData.dni);
+    callAPI('findByDni', {dni:S.ocrData.dni}, function(fr){
+      ocultarLoader(); irPaso(3); renderVerificacion(fr);
+    }, function(e){ ocultarLoader(); toast(e,'err'); });
+  }, function(e){ ocultarLoader(); toast(e,'err'); });
+}
+
+// â”€â”€ VERIFICACION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderVerificacion(findResult) {
+  var tSocio = INST.terminologiaSocio || 'Socio';
+  var noEncEl=document.getElementById('alert-dni-no-encontrado'), encEl=document.getElementById('alert-dni-encontrado'), cardComp=document.getElementById('card-comp'), btnSig3=document.getElementById('btn-sig3');
+  noEncEl.style.display='none'; encEl.style.display='none'; cardComp.style.display='none';
+
+  if(!findResult.found) {
+    document.getElementById('dni-no-enc').innerText = S.ocrData.dni;
+    document.getElementById('lbl-no-enc-titulo').innerText = tSocio + ' no encontrado en el sistema.';
+    document.getElementById('btn-crear-nuevo').innerText = 'Crear ' + tSocio.toLowerCase() + ' nuevo ->';
+    noEncEl.style.display='flex';
+    S.esNuevo=true; S.sistemaData={};
+  } else {
+    S.esNuevo=false; S.fila=findResult.fila; S.sistemaData=findResult.datos;
+    // Mapear contactos de formato "Nombre|Tel" a campos separados c1/c2
+    var _c1p = (S.sistemaData.contacto1||'').split('|');
+    var _c2p = (S.sistemaData.contacto2||'').split('|');
+    S.sistemaData.c1nombre = _c1p[0]||''; S.sistemaData.c1tel = _c1p[1]||'';
+    S.sistemaData.c2nombre = _c2p[0]||''; S.sistemaData.c2tel = _c2p[1]||'';
+    // Normalizar sexo: el sistema puede devolver M/F o Masculino/Femenino
+    if(S.sistemaData.sexo === 'M') S.sistemaData.sexo = 'Masculino';
+    if(S.sistemaData.sexo === 'F') S.sistemaData.sexo = 'Femenino';
+    // Convertir campos num&eacute;ricos a string para comparaci&oacute;n correcta
+    ['dni','celular','tel','categoria','plan'].forEach(function(k){
+      if(S.sistemaData[k] !== undefined && S.sistemaData[k] !== null)
+        S.sistemaData[k] = S.sistemaData[k].toString();
+    });
+    document.getElementById('alert-enc-msg').innerHTML =
+      '<b>' + (findResult.datos.apellido||'') + ', ' + (findResult.datos.nombre||'') + '</b> encontrado en el sistema. Verific&aacute; los datos y edit&aacute; lo que sea necesario.';
+    encEl.style.display='flex';
+    try { buildTabla(); } catch(e) { console.error('buildTabla error:', e); }
+    cardComp.style.display='block';
+    btnSig3.disabled=false;
+  }
+}
+
+function modoNuevo() {
+  S.esNuevo=true; S.sistemaData={};
+  CAMPOS.forEach(function(c){ if(S.ocrData[c.key]) S.sistemaData[c.key]=S.ocrData[c.key]; });
+  document.getElementById('alert-dni-no-encontrado').style.display='none';
+  buildTabla(); document.getElementById('card-comp').style.display='block'; document.getElementById('btn-sig3').disabled=false;
+}
+
+function buildTabla() {
+  var container = document.getElementById('comp-tbody');
+  container.innerHTML = '';
+
+  var camposDatos    = CAMPOS.filter(function(c){ return ['apellido','nombre','dni','fechaNac','sexo','domicilio','email','celular'].indexOf(c.key) >= 0; });
+  var camposContacto = CAMPOS.filter(function(c){ return c.key.indexOf('c1') === 0 || c.key.indexOf('c2') === 0; });
+
+  function renderSeccion(label, campos) {
+    var html = "<div style='font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);'>" + label + "</div>";
+    campos.forEach(function(c) {
+      var ocrVal = (S.ocrData && S.ocrData[c.key] !== undefined && S.ocrData[c.key] !== null) ? S.ocrData[c.key].toString() : "";
+      var sysVal = (S.sistemaData && S.sistemaData[c.key] !== undefined && S.sistemaData[c.key] !== null) ? S.sistemaData[c.key].toString() : "";
+      if (c.tipo === "date") { ocrVal = dmy2ymd(ocrVal); sysVal = dmy2ymd(sysVal); }
+
+      var rowCls = "";
+      if (c.editable) {
+        if (!sysVal && ocrVal)                                              rowCls = "row-vacio";
+        else if (sysVal && ocrVal && normalizar(sysVal) !== normalizar(ocrVal)) rowCls = "row-diff";
+        else if (sysVal)                                                    rowCls = "row-ok";
+      }
+
+      var badge = "";
+      if (rowCls === "row-ok")    badge = " <span class='badge-ok'>&#x2713;</span>";
+      if (rowCls === "row-vacio") badge = " <span class='badge-warn'>&#x270F;</span>";
+      if (rowCls === "row-diff")  badge = " <span class='badge-warn'>&#x26A0;</span>";
+
+      var inputHtml = "";
+      if (!c.editable) {
+        inputHtml = "<div style='font-size:13px;font-weight:600;color:var(--text);margin-top:4px;'>" + (sysVal || "-") + "</div>";
+      } else if (c.tipo === "select") {
+        inputHtml = "<select id='edit-" + c.key + "' style='width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px;border-radius:6px;outline:none;'>"
+          + c.opts.map(function(o){ return "<option value='" + o + "'" + (o === sysVal ? " selected" : "") + ">" + (o || "- Seleccionar -") + "</option>"; }).join("")
+          + "</select>";
+      } else {
+        inputHtml = "<input type='" + (c.tipo || "text") + "' id='edit-" + c.key + "' value='" + (sysVal || "").replace(/'/g, "&#39;") + "' placeholder='" + c.label + "' style='width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px;border-radius:6px;outline:none;'>";
+      }
+
+      html += "<div class='campo-comp " + rowCls + "'>";
+      html +=   "<div class='campo-comp-label'>" + c.label + badge + "</div>";
+      if (ocrVal) {
+        html += "<div class='campo-comp-ocr'><span style='font-size:10px;color:var(--muted);margin-right:4px;'>DNI:</span> <b>" + ocrVal + "</b></div>";
+      }
+      if (!c.editable) {
+        html += inputHtml;
+      } else {
+        html += "<div style='font-size:10px;color:var(--muted);margin-bottom:3px;'>Base de datos (editable):</div>";
+        html += inputHtml;
+      }
+      html += "</div>";
+    });
+    return html;
+  }
+
+  container.innerHTML =
+    renderSeccion('Datos personales', camposDatos) +
+    renderSeccion('Contactos de emergencia', camposContacto);
+}
+
+function normalizar(s){ return (s===null||s===undefined?'':s.toString()).toLowerCase().trim().replace(/\s+/g,' '); }
+
+function getCamposEditados() {
+  var out={};
+  CAMPOS.forEach(function(c){
+    if(!c.editable) return;
+    var el=document.getElementById('edit-'+c.key); if(!el) return;
+    var v=el.value.trim();
+    if(c.tipo==='date'&&v) v=ymd2dmy(v);
+    out[c.key]=v;
+  });
+    // DNI siempre del OCR (no editable)
+  out.dni = S.ocrData.dni || '';
+  if(S.esNuevo) {
+    if(!out.apellido) out.apellido = S.ocrData.apellido || '';
+    if(!out.nombre)   out.nombre   = S.ocrData.nombre   || '';
+  }
+  // Armar contactos en formato "Nombre|Tel"
+  out.contacto1 = [out.c1nombre||'', out.c1tel||''].filter(Boolean).join('|');
+  out.contacto2 = [out.c2nombre||'', out.c2tel||''].filter(Boolean).join('|');
   return out;
 }
 
-// â”€â”€ doGet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function doGet(e) {
-  var action  = (e.parameter.action)  || '';
-  var token   = (e.parameter.token)   || '';
-  var dataRaw = (e.parameter.data)    || '{}';
-  var data = {};
-  try { data = JSON.parse(dataRaw); } catch(err) {}
-
-  // ping no requiere token; getInstitucion tampoco (necesaria para el branding del login)
-  if (action !== 'ping' && action !== 'getInstitucion' && token !== ADMIN_PASS) {
-    return jsonOut({error: 'Acceso denegado'});
+// â”€â”€ FOTO Y DOCS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function toggleApto(){
+  var checked = document.getElementById('tiene-apto').checked;
+  document.getElementById('apto-upload-wrap').style.display = checked ? 'block' : 'none';
+  if(!checked) {
+    // Si desmarca, limpiar apto nuevo que haya cargado
+    S.apto = null; S.aptoType = null;
+    document.getElementById('prev-apto-wrap').style.display = 'none';
+    document.getElementById('zona-apto').style.display = 'block';
+    var zonaLabel = document.getElementById('zona-apto').querySelector('.upload-zone-label');
+    if(zonaLabel) zonaLabel.innerText = 'Subir imagen o PDF del certificado';
   }
-
-  var result;
-  try {
-    switch (action) {
-      case 'ping':           result = {ok: true}; break;
-      case 'getInstitucion': result = getInstitucion(); break;
-      case 'findByDni':      result = findByDni(data.dni); break;
-      case 'updateJugador':  result = updateJugador(data.dni, data.campos); break;
-      case 'addJugadorNuevo':result = addJugadorNuevo(data.campos); break;
-      case 'listModels':     result = listGeminiModels(); break;
-      default: result = {error: 'Accion desconocida: ' + action};
-    }
-  } catch(err) {
-    result = {error: err.toString()};
-  }
-  return jsonOut(result);
 }
 
-// â”€â”€ doPost: para payloads grandes (imÃ¡genes base64) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function doPost(e) {
-  var body = {};
-  try { body = JSON.parse(e.postData.contents); } catch(err) {
-    return jsonOut({error: 'JSON invalido: ' + err.toString()});
-  }
-
-  var action = body.action || '';
-  var token  = body.token  || '';
-
-  if (token !== ADMIN_PASS) {
-    return jsonOut({error: 'Acceso denegado'});
-  }
-
-  var result;
-  try {
-    switch (action) {
-      case 'ocrDocumento':   result = ocrDocumento(body.imgFront, body.imgBack, body.tipoDoc); break;
-      case 'saveFotosDrive': result = saveFotosDrive(body); break;
-      case 'updateJugador':  result = updateJugador(body.dni, body.campos); break;
-      case 'addJugadorNuevo':result = addJugadorNuevo(body.campos); break;
-      default: result = {error: 'Accion desconocida en POST: ' + action};
-    }
-  } catch(err) {
-    result = {error: err.toString()};
-  }
-  return jsonOut(result);
-}
-
-// â”€â”€ INSTITUCION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function getInstitucion() {
-  var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('INSTITUCION');
-  if (!sheet || sheet.getLastRow() < 1) {
-    return {
-      ok: true,
-      data: {
-        nombre: 'Mi Club',
-        nombreCorto: 'Club',
-        colorPrimario: '#1a7a3c',
-        colorSecundario: '#c9a227',
-        terminologiaSocio: 'Socio',
-        terminologiaSocios: 'Socios',
-        terminologiaGrupo: 'CategorÃ­a',
-        terminologiaGrupos: 'CategorÃ­as',
-        emailRemitente: '',
-        logoUrl: ''
+function cargarFoto(tipo, input){
+  var file=input.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    if(tipo==='foto'){
+      S.foto=e.target.result;
+      document.getElementById('prev-foto-img').src=e.target.result;
+      document.getElementById('prev-foto-wrap').style.display='block';
+      document.getElementById('zona-foto').style.display='none';
+    } else {
+      S.apto=e.target.result; S.aptoType=file.type;
+      if(file.type!=='application/pdf'){
+        document.getElementById('prev-apto-img').src=e.target.result;
+        document.getElementById('prev-apto-wrap').style.display='block';
+      } else {
+        document.getElementById('prev-apto-wrap').innerHTML='<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;">&#x1F4C4; '+file.name+'<button class="upload-preview-remove" style="position:relative;margin-left:10px;" onclick="quitarFoto(\'apto\')">&#x2715;</button></div>';
+        document.getElementById('prev-apto-wrap').style.display='block';
       }
-    };
-  }
-  var data = sheet.getRange(1, 1, sheet.getLastRow(), 2).getValues();
-  var inst = {};
-  data.forEach(function(row) {
-    if (row[0]) inst[row[0].toString()] = row[1] !== undefined ? row[1].toString() : '';
-  });
-  return {ok: true, data: inst};
-}
-
-// â”€â”€ OCR via Gemini (genÃ©rico: DNI argentino + otros documentos) â”€â”€â”€
-function ocrDocumento(imgFront, imgBack, tipoDoc) {
-  var key = getGeminiKey();
-  if (!key) return {ok: false, error: 'GEMINI_KEY no configurada en Script Properties'};
-
-  var parts = [];
-  if (imgFront) {
-    parts.push({
-      inline_data: {
-        mime_type: 'image/jpeg',
-        data: imgFront.replace(/^data:image\/\w+;base64,/, '')
-      }
-    });
-  }
-  if (imgBack) {
-    parts.push({
-      inline_data: {
-        mime_type: 'image/jpeg',
-        data: imgBack.replace(/^data:image\/\w+;base64,/, '')
-      }
-    });
-  }
-
-  // Prompt genÃ©rico que funciona para DNI argentino y otros documentos de identidad
-  var prompt = 'Estas son fotos de un documento de identidad'
-    + (tipoDoc ? ' (' + tipoDoc + ')' : '')
-    + '. Extraer la siguiente informaciÃ³n y responder SOLO en JSON vÃ¡lido sin markdown:\n'
-    + '{\n'
-    + '  "apellido": "",\n'
-    + '  "nombre": "",\n'
-    + '  "dni": "",\n'
-    + '  "fechaNac": "DD/MM/YYYY",\n'
-    + '  "sexo": "M o F",\n'
-    + '  "domicilio": "",\n'
-    + '  "vencimiento": "DD/MM/YYYY o null"\n'
-    + '}\n'
-    + 'Si un campo no aparece en las imÃ¡genes, dejarlo como string vacÃ­o.';
-
-  parts.push({text: prompt});
-
-  var models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash'];
-  var lastError = '';
-
-  for (var m = 0; m < models.length; m++) {
-    try {
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-        + models[m] + ':generateContent?key=' + key;
-
-      var payload = JSON.stringify({
-        contents: [{parts: parts}],
-        generationConfig: {temperature: 0, maxOutputTokens: 512}
-      });
-
-      var resp = UrlFetchApp.fetch(url, {
-        method: 'post',
-        contentType: 'application/json',
-        payload: payload,
-        muteHttpExceptions: true
-      });
-
-      var respData = JSON.parse(resp.getContentText());
-      if (respData.error) { lastError = respData.error.message; continue; }
-
-      var text = respData.candidates[0].content.parts[0].text || '';
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      text = text.replace(/\r/g, '').replace(/\n/g, ' ');
-      var iStart = text.indexOf('{'), iEnd = text.lastIndexOf('}');
-      if (iStart >= 0 && iEnd > iStart) text = text.substring(iStart, iEnd + 1);
-
-      var parsed;
-      try {
-        parsed = JSON.parse(text);
-      } catch(parseErr) {
-        function extraer(campo) {
-          var needle = '"' + campo + '":';
-          var pos = text.indexOf(needle); if (pos < 0) return '';
-          var rest = text.substring(pos + needle.length).trim();
-          if (rest.charAt(0) !== '"') return '';
-          var val = '';
-          for (var ci = 1; ci < rest.length; ci++) {
-            if (rest.charAt(ci) === '"') break;
-            val += rest.charAt(ci);
-          }
-          return val;
-        }
-        parsed = {
-          apellido: extraer('apellido'), nombre: extraer('nombre'),
-          dni: extraer('dni'), fechaNac: extraer('fechaNac'),
-          sexo: extraer('sexo'), domicilio: extraer('domicilio'),
-          vencimiento: extraer('vencimiento')
-        };
-      }
-      return {ok: true, data: parsed, model: models[m]};
-
-    } catch(e) { lastError = e.toString(); }
-  }
-
-  return {ok: false, error: 'OCR fallido: ' + lastError};
-}
-
-// â”€â”€ Buscar socio/miembro por DNI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function findByDni(dni) {
-  if (!dni) return {found: false, error: 'DNI requerido'};
-  var ss    = SpreadsheetApp.openById(SS_ID);
-  var sheet = ss.getSheetByName('Hoja 1');
-  if (!sheet || sheet.getLastRow() < 2) return {found: false};
-
-  var dniNorm = normalizarDni(dni);
-  var numRows = sheet.getLastRow() - 1;
-  var numCols = Math.min(sheet.getLastColumn(), 24);
-  var allData = sheet.getRange(2, 1, numRows, numCols).getValues();
-
-  for (var i = 0; i < allData.length; i++) {
-    var row = allData[i];
-    var valI = row[8]  ? normalizarDni(row[8])  : '';
-    var valD = row[3]  ? normalizarDni(row[3])  : '';
-    if (valI === dniNorm || valD === dniNorm) {
-      var fila = i + 2;
-      return {
-        found: true,
-        fila: fila,
-        datos: {
-          apellido:    row[0]  || '',
-          nombre:      row[1]  || '',
-          email:       row[2]  || '',
-          celular:     row[5]  || '',
-          activo:      row[6]  || '',
-          dni:         row[8]  || row[3] || '',
-          fechaNac:    row[9] instanceof Date ? Utilities.formatDate(row[9], 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy') : (row[9] || ''),
-          sexo:        row[10] || '',
-          domicilio:   row[11] || '',
-          categoria:   row[17] || '',
-          plan:        row[18] || '',
-          fotoUrl:     row[19] || '',
-          dniFotoUrl:  row[20] || '',
-          aptoUrl:     row[21] || '',
-          contacto1:   row[22] || '',
-          contacto2:   row[23] || ''
-        }
-      };
+      document.getElementById('zona-apto').style.display='none';
     }
-  }
-  return {found: false};
-}
-
-// â”€â”€ Actualizar socio/miembro existente â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function updateJugador(dni, campos) {
-  if (!dni || !campos) return {ok: false, error: 'Faltan datos'};
-  var ss    = SpreadsheetApp.openById(SS_ID);
-  var sheet = ss.getSheetByName('Hoja 1');
-
-  var dnis = sheet.getRange(2, 9, sheet.getLastRow()-1, 1).getValues();
-  var fila = -1;
-  for (var i = 0; i < dnis.length; i++) {
-    if (dnis[i][0] && dnis[i][0].toString().trim() === dni.toString().trim()) {
-      fila = i + 2; break;
-    }
-  }
-  if (fila < 0) return {ok: false, error: 'Registro no encontrado'};
-
-  var colMap = {
-    apellido:   1,   // A
-    nombre:     2,   // B
-    email:      3,   // C
-    celular:    6,   // F
-    fechaNac:   10,  // J
-    domicilio:  12,  // L
-    fotoUrl:    20,  // T
-    dniFotoUrl: 21,  // U
-    aptoUrl:    22,  // V
-    contacto1:  23,  // W
-    contacto2:  24   // X
   };
+  reader.readAsDataURL(file);
+}
 
-  if (campos.sexo) {
-    campos.sexo = campos.sexo === 'M' ? 'Masculino' : campos.sexo === 'F' ? 'Femenino' : campos.sexo;
-    sheet.getRange(fila, 11).setValue(campos.sexo);
+function quitarFoto(tipo){
+  if(tipo==='foto'){ S.foto=null; document.getElementById('prev-foto-wrap').style.display='none'; document.getElementById('zona-foto').style.display='block'; }
+  else { S.apto=null; S.aptoType=null; document.getElementById('prev-apto-wrap').style.display='none'; document.getElementById('zona-apto').style.display='block'; }
+}
+
+// â”€â”€ RESUMEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderResumen(){
+  var campos=getCamposEditados();
+  var tSocio=INST.terminologiaSocio||'Socio';
+  var html='<div class="resumen-section"><div class="resumen-title">Datos personales</div>';
+  var labels={apellido:'Apellido',nombre:'Nombre',dni:'DNI',fechaNac:'Fecha Nac.',sexo:'Sexo',domicilio:'Domicilio',email:'Email',celular:'Celular'};
+  var allCampos=Object.assign({},{apellido:S.ocrData.apellido||'',nombre:S.ocrData.nombre||'',dni:S.ocrData.dni||''},campos);
+  Object.keys(labels).forEach(function(k){ if(allCampos[k]) html+='<div class="resumen-row"><span class="resumen-label">'+labels[k]+'</span><span class="resumen-val">'+allCampos[k]+'</span></div>'; });
+  html+='</div>';
+  html+='<div class="resumen-section"><div class="resumen-title">Archivos a subir</div>';
+  html+='<div class="resumen-row"><span class="resumen-label">Documento Frente</span><span class="resumen-val">'+(S.imgFront?'<span style="color:#6de097;">&#x2713; Listo</span>':'<span style="color:var(--red);">&#x2717; No cargado</span>')+'</span></div>';
+  html+='<div class="resumen-row"><span class="resumen-label">Documento Dorso</span><span class="resumen-val">'+(S.imgBack?'<span style="color:#6de097;">&#x2713; Listo</span>':'<span style="color:var(--muted);">No cargado</span>')+'</span></div>';
+  html+='<div class="resumen-row"><span class="resumen-label">Foto '+tSocio+'</span><span class="resumen-val">'+(S.foto?'<span style="color:#6de097;">&#x2713; Lista</span>':'<span style="color:var(--muted);">No cargada</span>')+'</span></div>';
+  html+='<div class="resumen-row"><span class="resumen-label">Certificado</span><span class="resumen-val">'+(S.apto?'<span style="color:#6de097;">&#x2713; Cargado</span>':'<span style="color:var(--muted);">No cargado</span>')+'</span></div>';
+  html+='</div>';
+  html+='<div class="resumen-section"><div class="resumen-title">Acci&oacute;n</div>';
+  html+='<div class="resumen-row"><span class="resumen-label">Tipo</span><span class="resumen-val" style="color:var(--secondary);">'+(S.esNuevo?'Crear '+tSocio.toLowerCase()+' nuevo':'Actualizar '+tSocio.toLowerCase()+' existente')+'</span></div></div>';
+  document.getElementById('resumen-datos').innerHTML=html;
+}
+
+// â”€â”€ GUARDAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function confirmarGuardar(){
+  var campos=getCamposEditados();
+  var dni=S.ocrData.dni||campos.dni;
+  if(!dni){ toast('No se pudo determinar el DNI','err'); return; }
+
+  mostrarLoader('Guardando datos...');
+
+  function guardarFotos(cb) {
+    if(!S.imgFront&&!S.foto&&!S.apto){ cb({}); return; }
+    mostrarLoader('Subiendo im&aacute;genes a Drive...');
+    callAPI('saveFotosDrive', {
+      dni:normalizarDni(dni), imgFront:S.imgFront||null, imgBack:S.imgBack||null,
+      foto:S.foto||null, apto:S.apto||null, aptoType:S.aptoType||null
+    }, function(r){ cb(r.urls||{}); }, function(e){ toast('Error subiendo im&aacute;genes: '+e,'err'); cb({}); });
   }
-  Object.keys(campos).forEach(function(campo) {
-    if (colMap[campo] && campos[campo] !== undefined && campos[campo] !== null) {
-      sheet.getRange(fila, colMap[campo]).setValue(campos[campo]);
+
+  guardarFotos(function(urls){
+    if(urls.fotoUrl)     campos.fotoUrl    =urls.fotoUrl;
+    if(urls.dniFrenteUrl)campos.dniFotoUrl =urls.dniFrenteUrl;
+    if(urls.dniDorsoUrl) campos.dniDorsoUrl=urls.dniDorsoUrl;
+    if(urls.aptoUrl)     campos.aptoUrl    =urls.aptoUrl;
+    campos.dni=dni;
+
+    if(S.esNuevo){
+      mostrarLoader('Creando nuevo registro...');
+      callAPI('addJugadorNuevo', {campos:campos}, function(r){
+        ocultarLoader(); if(!r.ok){ toast(r.error||'Error al crear','err'); return; } mostrarExito(true);
+      }, function(e){ ocultarLoader(); toast(e,'err'); });
+    } else {
+      mostrarLoader('Actualizando datos...');
+      callAPI('updateJugador', {dni:dni, campos:campos}, function(r){
+        ocultarLoader(); if(!r.ok){ toast(r.error||'Error al actualizar','err'); return; } mostrarExito(false);
+      }, function(e){ ocultarLoader(); toast(e,'err'); });
     }
   });
-
-  return {ok: true, fila: fila};
 }
 
-// â”€â”€ Agregar nuevo socio/miembro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function addJugadorNuevo(campos) {
-  if (!campos || !campos.dni) return {ok: false, error: 'DNI requerido'};
-  var dniNorm = normalizarDni(campos.dni);
-  var ss    = SpreadsheetApp.openById(SS_ID);
-  var sheet = ss.getSheetByName('Hoja 1');
-
-  if (sheet.getLastRow() > 1) {
-    var dnis = sheet.getRange(2, 9, sheet.getLastRow()-1, 1).getValues();
-    for (var i = 0; i < dnis.length; i++) {
-      if (dnis[i][0] && normalizarDni(dnis[i][0]) === dniNorm) {
-        return {ok: false, error: 'Ya existe un registro con ese DNI'};
-      }
-    }
-  }
-
-  var hoy = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd');
-  var fila = [
-    (campos.apellido || '').toUpperCase(),  // A - Apellido
-    (campos.nombre   || '').toUpperCase(),  // B - Nombre
-    campos.email     || '',                 // C - Email
-    dniNorm,                                // D - Tarjeta/ID
-    '',                                     // E - Tel
-    campos.celular   || '',                 // F - Celular
-    'Si',                                   // G - Activo
-    'DNI',                                  // H - TipoDoc
-    dniNorm,                                // I - DNI
-    campos.fechaNac  || '',                 // J - FechaNac
-    (campos.sexo==='M'?'Masculino':campos.sexo==='F'?'Femenino':campos.sexo||''), // K - Sexo
-    campos.domicilio || '',                 // L - Domicilio
-    '',                                     // M - Obs
-    '',                                     // N - Membresia
-    '',                                     // O - Vencimiento
-    hoy,                                    // P - FechaIngreso
-    'App',                                  // Q - Creador
-    '',                                     // R - Categoria/Grupo
-    '',                                     // S - Plan
-    campos.fotoUrl    || '',                // T - FotoURL
-    campos.dniFotoUrl || '',                // U - Doc_Foto
-    campos.aptoUrl    || '',                // V - Apto/Certificado
-    campos.contacto1 || '',                 // W - Contacto 1 (Nombre|Tel)
-    campos.contacto2 || '',                 // X - Contacto 2 (Nombre|Tel)
-    campos.dniDorsoUrl || ''                // Y - Doc_Dorso
-  ];
-
-  sheet.appendRow(fila);
-  return {ok: true, fila: sheet.getLastRow()};
+function mostrarExito(esNuevo){
+  var tSocio=INST.terminologiaSocio||'Socio';
+  var nombre=(S.ocrData.apellido||'')+', '+(S.ocrData.nombre||'');
+  document.getElementById('success-msg').innerHTML=
+    (esNuevo?tSocio+' <b>'+nombre+'</b> creado correctamente.':'Datos de <b>'+nombre+'</b> actualizados correctamente.')
+    +' Las im&aacute;genes se guardaron en Drive.';
+  irPaso(6);
 }
 
-// â”€â”€ Guardar fotos/documentos en Drive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function saveFotosDrive(data) {
-  if (!data.dni) return {ok: false, error: 'DNI requerido'};
-
-  var rootFolder = DriveApp.getFolderById(FOLDER_ID);
-  var dniStr     = normalizarDni(data.dni);
-
-  var dniFolder;
-  var existing = rootFolder.getFoldersByName(dniStr);
-  if (existing.hasNext()) { dniFolder = existing.next(); }
-  else { dniFolder = rootFolder.createFolder(dniStr); }
-
-  var urls = {};
-
-  if (data.imgFront) {
-    urls.dniFrenteUrl = saveBase64(dniFolder, 'doc_frente.jpg', data.imgFront, 'image/jpeg');
-  }
-  if (data.imgBack) {
-    urls.dniDorsoUrl = saveBase64(dniFolder, 'doc_dorso.jpg', data.imgBack, 'image/jpeg');
-  }
-  if (data.foto) {
-    urls.fotoUrl = saveBase64(dniFolder, 'foto.jpg', data.foto, 'image/jpeg');
-  }
-  if (data.apto) {
-    var ext  = data.aptoType === 'application/pdf' ? 'pdf' : 'jpg';
-    var mime = data.aptoType || 'image/jpeg';
-    urls.aptoUrl = saveBase64(dniFolder, 'certificado.' + ext, data.apto, mime);
-  }
-
-  // Actualizar URLs en la hoja
-  var findResult = findByDni(dniStr);
-  if (findResult.found) {
-    var ss    = SpreadsheetApp.openById(SS_ID);
-    var sheet = ss.getSheetByName('Hoja 1');
-    var fila  = findResult.fila;
-    if (urls.fotoUrl)      sheet.getRange(fila, 20).setValue(urls.fotoUrl);
-    if (urls.dniFrenteUrl) sheet.getRange(fila, 21).setValue(urls.dniFrenteUrl);
-    if (urls.dniDorsoUrl)  sheet.getRange(fila, 25).setValue(urls.dniDorsoUrl);
-    if (urls.aptoUrl)      sheet.getRange(fila, 22).setValue(urls.aptoUrl);
-  }
-
-  return {ok: true, urls: urls, carpeta: dniFolder.getUrl()};
+function reiniciar(){
+  S={paso:1,imgFront:null,imgBack:null,foto:null,apto:null,aptoType:null,ocrData:null,sistemaData:null,esNuevo:false,fila:null,camStreams:{}};
+  ['prev1-wrap','prev2-wrap'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  ['btn-sig1','btn-sig2'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=true; });
+  document.getElementById('comp-tbody').innerHTML='';
+  document.getElementById('alert-dni-no-encontrado').style.display='none';
+  document.getElementById('alert-dni-encontrado').style.display='none';
+  document.getElementById('card-comp').style.display='none';
+  document.getElementById('btn-sig3').disabled=true;
+  document.getElementById('tiene-apto').checked=false;
+  document.getElementById('apto-upload-wrap').style.display='none';
+  S.paso=6; irPaso(1);
 }
 
-// â”€â”€ Listar modelos Gemini disponibles (debug) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function listGeminiModels() {
-  var key = getGeminiKey();
-  if (!key) return {error: 'GEMINI_KEY no configurada'};
-  try {
-    var resp = UrlFetchApp.fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models?key=' + key,
-      {method:'get', muteHttpExceptions:true}
-    );
-    var data = JSON.parse(resp.getContentText());
-    var names = (data.models||[])
-      .filter(function(m){ return (m.supportedGenerationMethods||[]).indexOf('generateContent')>=0; })
-      .map(function(m){ return m.name; });
-    return {ok:true, models:names};
-  } catch(e) { return {error:e.toString()}; }
+// â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(function(){ console.log('SW ok'); })
+    .catch(function(e){ console.log('SW:', e); });
 }
 
-// â”€â”€ Helper: guardar base64 en Drive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function saveBase64(folder, filename, base64, mimeType) {
-  var clean   = base64.replace(/^data:[^;]+;base64,/, '');
-  var decoded = Utilities.base64Decode(clean);
-  var blob    = Utilities.newBlob(decoded, mimeType, filename);
-
-  var existing = folder.getFilesByName(filename);
-  while (existing.hasNext()) { existing.next().setTrashed(true); }
-
-  var file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return file.getUrl();
-}
+window.onload = function(){
+  // Cargar branding antes de mostrar la p&aacute;gina
+  callAPI('getInstitucion', {}, function(r){
+    ocultarLoader();
+    if(r && r.ok && r.data) aplicarBranding(r.data);
+  }, function(){ ocultarLoader(); });
+  document.getElementById('btn-sig1').disabled = true;
+};
+</script>
+</body>
+</html>
