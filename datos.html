@@ -347,10 +347,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-
       <div class="card-body">
         <p class="card-desc" id="lbl-apto-desc">Sub&iacute; el certificado o apto. Puede ser imagen o PDF.</p>
         <div id="apto-upload-wrap">
-          <div id="prev-apto-wrap" class="upload-preview" style="display:none;">
-            <img id="prev-apto-img" src="" alt="Certificado" style="max-height:200px;object-fit:contain;background:#111;">
-            <button class="upload-preview-remove" onclick="quitarFoto('apto')">&#x2715;</button>
-          </div>
+          <div id="prev-apto-wrap" style="display:none;margin-bottom:8px;"></div>
           <div class="upload-zone" id="zona-apto" style="display:block;">
             <input type="file" accept="image/*,application/pdf" onchange="cargarFoto('apto',this)">
             <div class="upload-zone-icon">&#x1F4C4;</div>
@@ -468,7 +465,6 @@ function aplicarBranding(inst) {
   document.getElementById('header-titulo').innerHTML = nombre + ' &mdash; <span>Completar Datos</span>';
   document.getElementById('lbl-foto-titulo').innerText  = 'Foto del ' + tSocio;
   document.getElementById('lbl-apto-titulo').innerText  = 'Certificado / Apto';
-  document.getElementById('lbl-tiene-apto').innerText   = 'Tiene certificado vigente';
   document.getElementById('btn-reiniciar').innerText    = '&#x21BA; Cargar otro ' + tSocio.toLowerCase();
 }
 
@@ -802,7 +798,6 @@ function getCamposEditados() {
 }
 
 // â”€â”€ FOTO Y DOCS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// toggleApto eliminado
 
 
 function cargarFoto(tipo, input){
