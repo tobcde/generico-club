@@ -415,6 +415,12 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
         <div><label class="filter-label">Instructores</label><input id="hProfes" class="edit-input" style="width:100%;margin-top:4px;" placeholder="Separados por coma"></div>
         <div><label class="filter-label" id="lbl-horario-categoria">Categoria</label>
           <select id="hCat" class="edit-input" style="width:100%;margin-top:4px;"><option value="">Sin categoria</option></select></div>
+        <div><label class="filter-label">Modalidad</label>
+          <select id="hModalidad" class="edit-input" style="width:100%;margin-top:4px;">
+            <option value="Mixto">Mixto</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+          </select></div>
       </div>
       <button class="btn btn-save" onclick="crearHorario()">AGREGAR HORARIO</button>
       <div class="item-list" id="listH"></div>
@@ -774,7 +780,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.9</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.0</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -789,7 +795,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb0Flc3sgqIvF53eed_oaGtjIS7E_fbzEsKeCts6QTQh9sA09MX5pYHTX54OhwMEGO5A/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUt_Js9-OWDx1Trzi4Omn12jCUn9FrzwuiUUV9V5fRU_xJbRdzp8TcEBRtW2XceXXw6g/exec';
                   
                   
 // ---------------------------------------------------------------
@@ -1439,6 +1445,15 @@ function onCambioFechaAsist() { poblarTurnosAsist(); }
 
 function onCambioTurnoAsist() {
   var tid = document.getElementById('asistTurno').value;
+  // Guardar modalidad del turno seleccionado para filtrar socios
+  window._turnoModalidad = 'Mixto';
+  if(tid) {
+    var tidParts = tid.split('_');
+    var turnoIdx = parseInt(tidParts[1]);
+    if(!isNaN(turnoIdx) && DB.horarios[turnoIdx]) {
+      window._turnoModalidad = DB.horarios[turnoIdx][6] || 'Mixto';
+    }
+  }
   if(!tid) return;
   cargarListaAsist(tid);
 }
@@ -1453,9 +1468,10 @@ function poblarTurnosAsist() {
   sel.innerHTML = '<option value="">-- Seleccionar turno --</option>';
   DB.horarios.forEach(function(h, i){
     if((h[0]||'').toString().toLowerCase() === diaSel.toLowerCase()){
-      var hora = h[1]||'', cat = h[4]||'', sede = h[2]||'';
+      var hora = h[1]||'', cat = h[4]||'', sede = h[2]||'', modalidad = h[6]||'Mixto';
       var tid = fecha + '_' + i + '_' + cat;
-      var lbl = diaSel + ' ' + hora + ' hs - ' + cat + (sede ? ' [' + sede + ']' : '');
+      var modLabel = modalidad && modalidad !== 'Mixto' ? ' (' + modalidad + ')' : '';
+      var lbl = diaSel + ' ' + hora + ' hs - ' + cat + modLabel + (sede ? ' [' + sede + ']' : '');
       sel.innerHTML += '<option value="' + tid + '">' + lbl + '</option>';
     }
   });
@@ -1468,7 +1484,15 @@ function cargarListaAsist(turnoId) {
   var cat = hd ? (hd[4]||'') : '';
   var lista = DB.jugadores.slice(1).filter(function(f){
     var a = f[COL.ACTIVO]; if(!(a===true||String(a).toLowerCase()==='si')) return false;
-    return !cat || String(f[COL.CATEGORIA_APP]||'').trim() === String(cat).trim();
+    if(cat && String(f[COL.CATEGORIA_APP]||'').trim() !== String(cat).trim()) return false;
+    // Filtrar por modalidad del turno (h[6]): Mixto=todos, Masculino=solo masc, Femenino=solo fem
+    var turnoModalidad = window._turnoModalidad || 'Mixto';
+    if(turnoModalidad !== 'Mixto') {
+      var sexo = (f[COL.SEXO]||'').toString();
+      if(turnoModalidad === 'Masculino' && sexo !== 'Masculino') return false;
+      if(turnoModalidad === 'Femenino'  && sexo !== 'Femenino')  return false;
+    }
+    return true;
   });
 
   // Cargar asistencias previas
@@ -1940,13 +1964,13 @@ function renderHorarios() {
     return '<div class="item-row" style="border-left:4px solid var(--secondary);flex-direction:column;align-items:flex-start;">'
       + '<div style="display:flex;justify-content:space-between;width:100%;margin-bottom:4px;"><strong>' + h[0] + ' ' + h[1] + ' hs</strong>'
       + '<button class="icon-btn" style="color:var(--red);" data-action="borrar" data-tabla="Horarios" data-row="' + h[h.length-1] + '">X</button></div>'
-      + '<small style="color:var(--muted);">Sede: ' + (h[2]||'-') + ' | Instructores: ' + (h[3]||'-') + ' | ' + T('grupo') + ': ' + (h[4]||'-') + '</small></div>';
+      + '<small style="color:var(--muted);">Sede: ' + (h[2]||'-') + ' | Instructores: ' + (h[3]||'-') + ' | ' + T('grupo') + ': ' + (h[4]||'-') + ' | Modalidad: ' + (h[6]||'Mixto') + '</small></div>';
   }).join('');
   el.addEventListener('click', function(e){ var btn = e.target.closest('[data-action="borrar"]'); if(btn) borrar(btn.dataset.tabla, parseInt(btn.dataset.row)); });
 }
 
 function crearHorario() {
-  var row = [document.getElementById('hDia').value, document.getElementById('hHora').value, document.getElementById('hSede').value, document.getElementById('hProfes').value, document.getElementById('hCat').value];
+  var row = [document.getElementById('hDia').value, document.getElementById('hHora').value, document.getElementById('hSede').value, document.getElementById('hProfes').value, document.getElementById('hCat').value, document.getElementById('hModalidad').value || 'Mixto'];
   if(!row[0] || !row[1]) return alert('Completa dia y hora');
   mostrarLoader('Guardando...');
   callScript({action:'addComplexItem', tabName:'Horarios', rowArray:row, pass:TOKEN}, inicializar, function(e){ ocultarLoader(); alert('Error: '+e); });
@@ -2548,6 +2572,6 @@ window.onload = function() {
   }
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v1.9</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.0</div>
 </body>
 </ht
