@@ -1502,7 +1502,7 @@ function renderPlayers() {
     html += '<span style="font-size:11px;font-weight:600;text-transform:uppercase;">' + (act ? 'ACTIVO' : 'INACTIVO') + '</span></div>';
     html += '</div>';
     html += '<div class="cuota-badge"><span class="cuota-pill ' + cl + '">' + lb + '</span>';
-    html += '<span style="font-size:11px;color:var(--muted);">' + (pl ? pl + ' ' + ms : '') + '</span></div>';
+    html += '<span style="font-size:11px;color:var(--muted);">' + (cv.planNom ? cv.planNom + ' ' + ms : '') + '</span></div>';
     if(st.total > 0){
       html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">';
       html += '<span style="font-size:10px;color:var(--muted);text-transform:uppercase;">Asistencia mes</span>';
@@ -1561,15 +1561,15 @@ function renderCuotas() {
     var pagado = pagosVigentes.reduce(function(s,c){ return s + Number(c[6]||0); }, 0);
     var ult = pagos.length ? pagos[pagos.length-1] : null;
     var hastaStr = pagosVigentes.length ? pagosVigentes.reduce(function(mx,c){ var h = parseDate(c[4]); return (!mx||h>mx)?h:mx; }, null) : null;
-    if(filt==='sinplan' && pl) return;
+    if(filt==='sinplan' && cv.planNom) return;
     if(filt==='ok' && est!=='ok') return;
     if(filt==='debe' && est!=='debe') return;
     if(filt==='vence' && est!=='vence') return;
-    if(!filt && !pl) return;
+    if(!filt && !cv.planNom) return;
     if(fcat && cat !== fcat) return;
     if(busq && !nom.includes(busq) && !dni.includes(busq)) return;
-    if(pl){ tc++; es+=mo; if(est==='ok'){pa++;re+=pagado;} else if(est==='vence'){pv++;re+=pagado;} else de++; }
-    rows.push({f:f, pl:pl, mo:mo, est:est, hasta:cv.hasta, hastaStr:hastaStr, pagado:pagado});
+    if(cv.planNom){ tc++; es+=mo; if(est==='ok'){pa++;re+=pagado;} else if(est==='vence'){pv++;re+=pagado;} else de++; }
+    rows.push({f:f, pl:cv.planNom||'', mo:mo, est:est, hasta:cv.hasta, hastaStr:hastaStr, pagado:pagado});
   });
   document.getElementById('rc-total').innerText = tc;
   document.getElementById('rc-pagaron').innerText = pa;
