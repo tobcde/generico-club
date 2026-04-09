@@ -966,7 +966,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.8</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.9</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -981,7 +981,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlU1kL7dMyQNpyiYy5uomif7pjQtYwzZs1FeSMSeupcbE4V5VNwbUsGYqe3OFJzCs5fw/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqBpk-YZtBkHMRCMhuyZ4M2BMlm_EYt58qsU6IyuA1-6P8X_TkDeEjRFVCbSeimBK6EA/exec';
                   
                   
 // ---------------------------------------------------------------
@@ -1174,52 +1174,36 @@ function inicializar() {
       '<p style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-family:\'Barlow Condensed\',sans-serif;">Cargando datos completos...</p>' +
       '</div>';
 
-    var pendientes = 5;
-    function finCarga(){
-      if(--pendientes === 0){
-        renderPlayers();
-        renderCuotas();
-      }
+    // v3.9: actividades+precios vienen en getData (GAS v12) â†’ 2 llamadas paralelas
+    if (d.actividades && d.actividades.length) {
+      DB.actividades = d.actividades;
+      renderListActividades(); poblarSelectActividad();
+      poblarSelectsPrecios(); renderCatActsCheckboxes(''); poblarSelectMasiva();
     }
-    callScript({action:'getInscripciones', pass:TOKEN}, function(r){
-      DB.inscripciones = (r && r.inscripciones) ? r.inscripciones : [];
-      finCarga();
-    }, function(){ finCarga(); });
-    callScript({action:'getActividades', pass:TOKEN}, function(r){
-      DB.actividades = (r && r.actividades) ? r.actividades : [];
-      renderListActividades();
-      poblarSelectActividad();
-      poblarSelectsPrecios();
-      renderCatActsCheckboxes('');
-      poblarSelectMasiva();
-      finCarga();
-    }, function(){ finCarga(); });
-    callScript({action:'getAsistencias', pass:TOKEN}, function(r){ asistencias = Array.isArray(r) ? r : (r && r.data ? r.data : []); finCarga(); }, function(){ finCarga(); });
+    if (d.precios) { DB.precios = d.precios; renderListPrecios(); }
+
+    var pendientes = 2;
+    function finCarga(){ if(--pendientes===0){ renderPlayers(); renderCuotas(); } }
+
     callScript({action:'getCuotas', pass:TOKEN}, function(r){
-      // Normalizar cuotas de Sheets al formato unificado:
-      // Sheets:  [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs]
-      // Memoria: [DNI, Nombre, Plan, PeriodoDesde, PeriodoHasta, FechaPago, Monto, Metodo, ...]
-      // Formato unificado: c[0]=DNI, c[1]=Nombre, c[2]=Plan/Concepto, c[3]=PeriodoDesde, c[4]=PeriodoHasta/Fecha, c[5]=FechaPago, c[6]=Monto, c[7]=Metodo
       if (r && r.cuotas) {
         r.cuotas = r.cuotas.map(function(c) {
-          // Detectar si viene de Sheets: c[3] es num&eacute;rico (DNI) y c[0] es string tipo "abril 2026"
-          var esDeSheets = c.length <= 10 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
+          var esDeSheets = c.length<=10 && isNaN(Number(c[0])) && !isNaN(Number(c[3]));
           if (esDeSheets) {
-            // Sheets: [Periodo, Fecha, Concepto, DNI, Nombre, Monto, Metodo, Obs, PeriodoHasta, Saldo]
-            // -> [DNI, Nombre, Concepto, Hasta, Hasta, FechaPago, Monto, Metodo, '', Obs, Saldo]
-            var hasta = c[8] || c[1]; // col I = periodoHasta, fallback a fecha de pago
-            var saldoRow = (c[9] !== undefined && c[9] !== '') ? parseFloat(c[9]) : null;
-            return [c[3], c[4], c[2], hasta, hasta, c[1], c[5], c[6], '', c[7]||'', saldoRow];
+            var hasta = c[8]||c[1];
+            var saldoRow = (c[9]!==undefined&&c[9]!=='') ? parseFloat(c[9]) : null;
+            return [c[3],c[4],c[2],hasta,hasta,c[1],c[5],c[6],'',c[7]||'',saldoRow];
           }
           return c;
         });
       }
       CUOTAS_DB = r;
+      if (r && r.inscripciones) DB.inscripciones = r.inscripciones;
       finCarga();
     }, function(){ finCarga(); });
-    callScript({action:'getPrecios', pass:TOKEN}, function(r){
-      DB.precios = (r && r.precios) ? r.precios : [];
-      renderListPrecios();
+
+    callScript({action:'getAsistencias', pass:TOKEN}, function(r){
+      asistencias = Array.isArray(r) ? r : (r && r.data ? r.data : []);
       finCarga();
     }, function(){ finCarga(); });
     cargarCamposExtra();
@@ -1551,7 +1535,8 @@ function renderPlayers() {
     html += '<div><span class="status-dot ' + (act ? 'active-dot' : 'inactive-dot') + '"></span>';
     html += '<span style="font-size:11px;font-weight:600;text-transform:uppercase;">' + (act ? 'ACTIVO' : 'INACTIVO') + '</span></div>';
     html += '</div>';
-    html += '<div class="cuota-badge"><span class="cuota-pill ' + cl + '">' + lb + '</span>';
+    var _pt=cv.deuda>0?'Debe $'+Number(cv.deuda).toLocaleString('es-AR'):cv.saldoAFavor>0?'A favor: $'+Number(cv.saldoAFavor).toLocaleString('es-AR'):'Al dia';
+html += '<div class="cuota-badge"><span class="cuota-pill ' + cl + '" title="'+_pt+'">' + lb + '</span>';
     html += '<span style="font-size:11px;color:var(--muted);">' + (cv.planNom ? cv.planNom + ' ' + ms : '') + '</span></div>';
     if(st.total > 0){
       html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">';
@@ -2129,6 +2114,8 @@ function abrirM(ai) {
         + '<div class="hist-meta">' + (c[7]||'-') + '</div></div>'
         + '<div class="hist-monto">$' + Number(c[6]).toLocaleString('es-AR') + '</div></div>';
     }).join('');
+  var _totPag=hc.reduce(function(s,p){return s+(Number(p[6])||0);},0);
+  if(_totPag>0) document.getElementById('m-hist-cuotas').innerHTML += '<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;">Total pagado</span><span style="font-size:13px;font-weight:700;color:#6de097;">$'+Number(_totPag).toLocaleString('es-AR')+'</span></div>';
   // Cargar actividades del socio
   var actStr = (f[COL.ACTIVIDADES]||'').toString().trim();
   if(actStr === 'Hoja 1' || actStr === 'Hoja1' || /^\d+$/.test(actStr)) actStr = '';
@@ -3602,6 +3589,8 @@ window.onload = function() {
     inicializar();
   }
 };
+
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ if(typeof cerrarModalPago==='function') cerrarModalPago(); if(typeof cerrarModal==='function') cerrarModal(); } });
 </script>
 <div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.7</div>
 </body>
