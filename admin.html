@@ -466,7 +466,15 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       <button class="btn btn-save" onclick="ejecutarMasiva()" id="btn-masiva" style="width:100%;">GENERAR INSCRIPCIONES</button>
     </div>
 
-        <!-- Periodos -->
+        <!-- Herramientas saldo -->
+    <div class="admin-card">
+      <div class="admin-title">Saldo acumulado</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">La primera vez que uses el sistema de saldo, ejecuta la migracion para calcular el saldo historico de cada socio desde sus pagos existentes.</p>
+      <button class="btn btn-gold" onclick="migrarSaldos()" style="width:100%;margin-bottom:8px;">MIGRAR SALDOS HISTORICOS</button>
+      <p style="font-size:11px;color:var(--muted);">El debito mensual se ejecuta automaticamente el dia 1 de cada mes via trigger en el GAS.</p>
+    </div>
+
+    <!-- Periodos -->
     <div class="admin-card">
       <div class="admin-title">Periodos de pago</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;">
@@ -953,7 +961,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.9</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.0</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -968,7 +976,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_yqcaEns2mdYLHYFK_TGQVCRBpxtxlsV3aS-FmTJmyLm7phHZfEI8P0f6uE5SuoiVbQ/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxE8-fPZk0aDOk2TkZUhnQ0jJJfKDSOXiBBr8PX-TV2Cj1r-5h9QYVQBS3sk6A21TtmQA/exec';
                   
                   
 // ---------------------------------------------------------------
@@ -988,7 +996,8 @@ var COL = {
   DOMICILIO:11, OBS:12, MEMBRESIA:13, VENCIMIENTO:14,
   FECHA_ING:15, CREADOR:16, CATEGORIA_APP:17, PLAN:18,
   FOTO:19, DNI_FOTO:20, APTO:21, CONTACTO1:22, CONTACTO2:23, DNI_DORSO:24,
-  ACTIVIDADES:25
+  ACTIVIDADES:25,
+  SALDO:26
 };
 
 // -- TERMINOLOGIA DINAMICA ----------------------------------------
@@ -1365,74 +1374,28 @@ function estadoCuotaV2(f) {
   var dni = (f[COL.DNI]||'').toString();
   var hoy0 = new Date(); hoy0.setHours(0,0,0,0);
   var inscVig = getInscripcionesVigentes(dni, hoy0);
-  if(!inscVig.length) return {estado:'none', hasta:null, deuda:0, saldoAFavor:0, deudaActividad:0, deudaSocial:0, planNom:null, planMonto:0};
+  if(!inscVig.length) return {estado:'none', hasta:null, deuda:0, saldoAFavor:0, deudaActividad:0, deudaSocial:0, planNom:null, planMonto:0, saldoNeto:0};
   var planMonto = inscVig.reduce(function(s, i){ return s + (Number(i.monto)||0); }, 0);
   var planNom = inscVig.map(function(i){ return i.plan; }).join(' + ');
-  var hoy = new Date(); hoy.setHours(0,0,0,0);
-  var dni = (f[COL.DNI]||'').toString();
-  var pagos = CUOTAS_DB.cuotas.filter(function(c){ return c[0] == dni; });
 
-  // Buscar el pago vigente mas reciente (para saber hasta cu&aacute;ndo est&aacute; cubierto)
-  var mejor = null;
-  pagos.forEach(function(c){
-    var hasta = parseDate(c[4]);
-    if(hasta && hasta >= hoy){ if(!mejor || hasta > parseDate(mejor[4])) mejor = c; }
-  });
-  var hastaActividad = mejor ? parseDate(mejor[4]) : null;
-
-  // Calcular saldo neto acumulado sumando col Saldo (&iacute;ndice 10) de todos los pagos
-  // Si no hay col Saldo, fallback al m&eacute;todo anterior
-  // Calcular saldo neto acumulado CORRECTAMENTE:
-  // Agrupar pagos por periodo, sumar montos dentro del periodo, comparar UNA sola vez contra el plan
-  // Esto maneja pagos parciales (ej: 3 pagos de $5000 en abril = $15000 = al dia)
-  var periodoMap = {}; // periodo -> {montoTotal, tieneSaldoSheet, saldoSheet}
-
-  pagos.forEach(function(c) {
-    // Identificar el periodo: usar c[3] (periodoDesde) o c[4] (hasta) como clave
-    var periodo = (c[3] || c[4] || 'sin-periodo').toString().substring(0, 7); // YYYY-MM
-    if(!periodoMap[periodo]) periodoMap[periodo] = {montoTotal:0, saldoSheet:0, tieneSaldoSheet:false};
-
-    var tieneTimestamp = c.length >= 12 && typeof c[11] === 'number';
-    var saldoEnSheet   = !tieneTimestamp && c[10] !== undefined && c[10] !== null && c[10] !== '' && typeof c[10] === 'number';
-
-    periodoMap[periodo].montoTotal += Number(c[6]) || 0;
-
-    if(saldoEnSheet) {
-      // Si la sheet ya tiene saldo calculado, acumularlo (puede haber varios pagos del mismo periodo)
-      periodoMap[periodo].saldoSheet += Number(c[10]) || 0;
-      periodoMap[periodo].tieneSaldoSheet = true;
-    }
-  });
-
-  // Sumar el saldo de cada periodo
-  var saldoNeto = 0;
-  Object.keys(periodoMap).forEach(function(periodo) {
-    var p = periodoMap[periodo];
-    if(p.tieneSaldoSheet) {
-      // Recalcular desde el total del periodo (m&aacute;s preciso que sumar saldos individuales)
-      saldoNeto += p.montoTotal - planMonto;
-    } else {
-      // Sin col J: calcular desde montoTotal del periodo
-      if(p.montoTotal > 0) saldoNeto += p.montoTotal - planMonto;
-    }
-  });
+  // Leer saldo acumulado desde col AA (COL.SALDO)
+  var saldoNeto = Number(f[COL.SALDO]) || 0;
 
   // saldoNeto > 0 = a favor, saldoNeto < 0 = debe
   var deudaActividad = saldoNeto >= 0 ? 0 : Math.abs(saldoNeto);
   var saldoAFavor    = saldoNeto > 0  ? saldoNeto : 0;
 
   var estado;
-  if(deudaActividad === 0 && (mejor || saldoAFavor > 0)) {
-    var dias7 = new Date(hoy); dias7.setDate(dias7.getDate() + 7);
-    estado = hastaActividad && hastaActividad <= dias7 ? 'vence' : 'ok';
+  if(deudaActividad === 0 && saldoAFavor >= 0) {
+    estado = 'ok';
   } else if(deudaActividad > 0 && deudaActividad >= planMonto) {
     estado = 'debe';
   } else if(deudaActividad > 0) {
     estado = 'parcial';
   } else {
-    estado = hastaActividad ? 'ok' : 'debe';
+    estado = 'ok';
   }
-  return {estado:estado, hasta:hastaActividad, deuda:deudaActividad, saldoAFavor:saldoAFavor, deudaActividad:deudaActividad, deudaSocial:0, planNom:planNom, planMonto:planMonto, saldoNeto:saldoNeto};
+  return {estado:estado, hasta:null, deuda:deudaActividad, saldoAFavor:saldoAFavor, deudaActividad:deudaActividad, deudaSocial:0, planNom:planNom, planMonto:planMonto, saldoNeto:saldoNeto};
 }
 
 function periodoLabel(p){ var a = p.split('-'); var m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']; return m[parseInt(a[1])-1] + ' ' + a[0]; }
@@ -1723,8 +1686,11 @@ function confirmarPago() {
       fechaPago: _fecha, monto: item.monto, metodo: _metodo, cobrador: _cobrador, obs: _obs,
       hoja: pagoCtx.hoja
     };
-    callScript({action:'registrarPago', pago:p, pass:TOKEN, _noRetry:true}, function(){
+    callScript({action:'registrarPago', pago:p, pass:TOKEN, _noRetry:true}, function(res){
       CUOTAS_DB.cuotas.push([p.doc, p.nombre, p.plan, p.periodoDesde, p.periodoHasta, p.fechaPago, p.monto, p.metodo, p.cobrador, p.obs, p.hoja, Date.now()]);
+      // Actualizar saldo en memoria local
+      var _jIdx = DB.jugadores.findIndex(function(jj){ return jj && (jj[COL.DNI]||'').toString() === p.doc.toString(); });
+      if(_jIdx >= 0 && res && res.nuevoSaldo !== undefined) { DB.jugadores[_jIdx][COL.SALDO] = res.nuevoSaldo; }
       if(++done === pagos.length) {
         window._ultimoPago = {
           nombre: pagoCtx.nombre, dni: pagoCtx.dni,
@@ -2766,6 +2732,16 @@ function getPrecio(actividad, categoria) {
   return p ? p.monto : null;
 }
 
+function migrarSaldos() {
+  if(!confirm('Calcular saldo historico para todos los socios desde sus pagos existentes?')) return;
+  mostrarLoader('Calculando saldos...');
+  callScript({action:'migrarSaldos', pass:TOKEN, _noRetry:true}, function(r){
+    ocultarLoader();
+    inicializar();
+    toast('Saldos migrados: ' + (r.migrados||0) + ' socios', 'ok');
+  }, function(e){ ocultarLoader(); alert('Error: ' + e); });
+}
+
 function poblarSelectMasiva() {
   var sel = document.getElementById('masiva-cat'); if(!sel) return;
   var prev = sel.value;
@@ -3480,6 +3456,6 @@ window.onload = function() {
   }
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v2.9</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.0</div>
 </body>
 </html>
