@@ -468,10 +468,17 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 
         <!-- Herramientas saldo -->
     <div class="admin-card">
-      <div class="admin-title">Saldo acumulado</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">La primera vez que uses el sistema de saldo, ejecuta la migracion para calcular el saldo historico de cada socio desde sus pagos existentes.</p>
-      <button class="btn btn-gold" onclick="migrarSaldos()" style="width:100%;margin-bottom:8px;">MIGRAR SALDOS HISTORICOS</button>
-      <p style="font-size:11px;color:var(--muted);">El debito mensual se ejecuta automaticamente el dia 1 de cada mes via trigger en el GAS.</p>
+      <div class="admin-title">Estado de cuotas</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">El saldo de cada socio se calcula automaticamente en tiempo real desde el historial de pagos e inscripciones. No se necesita ningun trigger mensual ni migracion.</p>
+      <div style="background:rgba(109,224,151,.08);border:1px solid rgba(109,224,151,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#6de097;line-height:1.6;">
+        <b>Arquitectura activa:</b><br>
+        <span style="color:var(--muted);">
+        &bull; Saldo = total pagado &minus; (meses transcurridos &times; plan)<br>
+        &bull; Se recalcula en cada apertura de ficha, card y cobro<br>
+        &bull; Funciona con multiples actividades de forma independiente<br>
+        &bull; Bajas de inscripcion cortan el conteo automaticamente
+        </span>
+      </div>
     </div>
 
     <!-- Periodos -->
@@ -915,8 +922,6 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
         <div class="filter-group full" style="grid-column:1/-1;"><label class="filter-label">Domicilio</label><input id="ns-domicilio" class="edit-input" style="width:100%;"></div>
         <div class="filter-group"><label class="filter-label" id="lbl-ns-categoria">Categoria</label>
           <select id="ns-categoria" class="edit-input" style="width:100%;"></select></div>
-        <div class="filter-group"><label class="filter-label">Plan</label>
-          <select id="ns-plan" class="edit-input" style="width:100%;"></select></div>
         <div class="filter-group full" style="grid-column:1/-1;"><label class="filter-label">Observaciones</label><input id="ns-obs" class="edit-input" style="width:100%;"></div>
         <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:6px;padding-top:12px;">
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Contactos de emergencia</div>
@@ -961,7 +966,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.0</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.8</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -976,7 +981,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 // ---------------------------------------------------------------
 //  CONFIGURACION - REEMPLAZAR ANTES DE DEPLOY
 // ---------------------------------------------------------------
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxE8-fPZk0aDOk2TkZUhnQ0jJJfKDSOXiBBr8PX-TV2Cj1r-5h9QYVQBS3sk6A21TtmQA/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlU1kL7dMyQNpyiYy5uomif7pjQtYwzZs1FeSMSeupcbE4V5VNwbUsGYqe3OFJzCs5fw/exec';
                   
                   
 // ---------------------------------------------------------------
@@ -1311,9 +1316,11 @@ function abrirModalInscripcion() {
   document.getElementById('mi-sub').innerText = (f[COL.APELLIDO]||'') + ' ' + (f[COL.NOMBRE]||'');
   // Poblar select de planes
   var sel = document.getElementById('mi-plan');
-  var optsPlanes = (CUOTAS_DB.planes||[]).map(function(p){ return '<option value="' + p[0] + '" data-monto="' + p[1] + '">' + p[0] + ' ($' + Number(p[1]).toLocaleString('es-AR') + ')</option>'; }).join('');
-  var optsActs   = (DB.actividades||[]).map(function(a){ return '<option value="' + a.nombre + '" data-monto="' + (a.monto||0) + '">' + (a.icono||'') + ' ' + a.nombre + (a.monto ? ' ($' + Number(a.monto).toLocaleString('es-AR') + ')' : '') + '</option>'; }).join('');
-  sel.innerHTML = '<option value="">-- Seleccionar --</option>' + optsPlanes + (optsActs ? '<optgroup label="Actividades">' + optsActs + '</optgroup>' : '');
+  sel.innerHTML = '<option value="">-- Seleccionar --</option>'
+    + (DB.actividades||[]).map(function(a){
+        var monto = a.monto || 0;
+        return '<option value="' + a.nombre + '" data-monto="' + monto + '">' + (a.icono ? a.icono + ' ' : '') + a.nombre + (monto ? ' ($' + Number(monto).toLocaleString('es-AR') + ')' : '') + '</option>';
+      }).join('');
   document.getElementById('mi-monto').value = '';
   document.getElementById('mi-desde').value = new Date().toISOString().split('T')[0];
   document.getElementById('mi-hasta').value = '';
@@ -1328,8 +1335,12 @@ function cerrarModalInscripcion() {
 function miAutoMonto() {
   var sel = document.getElementById('mi-plan');
   var opt = sel.options[sel.selectedIndex];
-  var monto = opt ? (opt.getAttribute('data-monto')||'') : '';
-  if(monto) document.getElementById('mi-monto').value = monto;
+  if(!opt || !opt.value) return;
+  // Buscar precio en Config_Precios (actividad x categoria del socio)
+  var catSocio = itemSel ? (DB.jugadores[itemSel.arrIdx]||[])[COL.CATEGORIA_APP]||'' : '';
+  var precioConfig = getPrecio(opt.value, catSocio);
+  var monto = precioConfig !== null ? precioConfig : (opt.getAttribute('data-monto')||'');
+  if(monto !== '' && monto !== null) document.getElementById('mi-monto').value = monto;
 }
 
 function confirmarInscripcion() {
@@ -1370,33 +1381,109 @@ function darDeBajaInscripcion(rowIndex, dni) {
   }, function(e){ ocultarLoader(); alert('Error: '+e); });
 }
 
-function estadoCuotaV2(f) {
-  var dni = (f[COL.DNI]||'').toString();
-  var hoy0 = new Date(); hoy0.setHours(0,0,0,0);
-  var inscVig = getInscripcionesVigentes(dni, hoy0);
-  if(!inscVig.length) return {estado:'none', hasta:null, deuda:0, saldoAFavor:0, deudaActividad:0, deudaSocial:0, planNom:null, planMonto:0, saldoNeto:0};
-  var planMonto = inscVig.reduce(function(s, i){ return s + (Number(i.monto)||0); }, 0);
-  var planNom = inscVig.map(function(i){ return i.plan; }).join(' + ');
+// ================================================================
+// NUEVA ARQUITECTURA: calculo de saldo en tiempo real
+// Reemplaza estadoCuotaV2. Usa DB.inscripciones + CUOTAS_DB.cuotas.
+// Sin col AA, sin debitarMensual, calcula cada vez desde cero.
+// ================================================================
+function calcularEstadoTiempoReal(f) {
+  // Acepta jugador array o DNI string
+  // Acepta: string DNI, number DNI, o array jugador
+  var dni = (typeof f === 'string') ? f.trim()
+           : (typeof f === 'number') ? String(f).trim()
+           : ((f[COL.DNI]||'').toString().trim());
 
-  // Leer saldo acumulado desde col AA (COL.SALDO)
-  var saldoNeto = Number(f[COL.SALDO]) || 0;
+  var hoy = new Date();
+  var mesHoy = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
 
-  // saldoNeto > 0 = a favor, saldoNeto < 0 = debe
-  var deudaActividad = saldoNeto >= 0 ? 0 : Math.abs(saldoNeto);
-  var saldoAFavor    = saldoNeto > 0  ? saldoNeto : 0;
+  // Todas las inscripciones del socio (vigentes y vencidas â€” para detectar deudas del pasado)
+  var inscTodas = (DB.inscripciones||[]).filter(function(i) {
+    return (i.dni||'').toString().trim() === dni;
+  });
 
-  var estado;
-  if(deudaActividad === 0 && saldoAFavor >= 0) {
-    estado = 'ok';
-  } else if(deudaActividad > 0 && deudaActividad >= planMonto) {
-    estado = 'debe';
-  } else if(deudaActividad > 0) {
-    estado = 'parcial';
-  } else {
-    estado = 'ok';
+  if (!inscTodas.length) {
+    return {estado:'none', deuda:0, saldoAFavor:0, deudaActividad:0, deudaSocial:0,
+            planNom:null, planMonto:0, saldoNeto:0, detalle:[]};
   }
-  return {estado:estado, hasta:null, deuda:deudaActividad, saldoAFavor:saldoAFavor, deudaActividad:deudaActividad, deudaSocial:0, planNom:planNom, planMonto:planMonto, saldoNeto:saldoNeto};
+
+  // Inscripciones vigentes en el mes actual (para planNom y planMonto corrientes)
+  var inscVigentes = inscTodas.filter(function(i) {
+    var mD = i.desde ? normFecha(i.desde).substring(0,7) : '';
+    var mH = i.hasta ? normFecha(i.hasta).substring(0,7) : '';
+    return (!mD || mD <= mesHoy) && (!mH || mH >= mesHoy);
+  });
+
+  var planMonto = inscVigentes.reduce(function(s,i){ return s + (Number(i.monto)||0); }, 0);
+  var planNom   = inscVigentes.map(function(i){ return i.plan; }).join(' + ');
+
+  // Calcular estado por cada inscripcion
+  var deudaTotal = 0, favorTotal = 0;
+  var estadoPeor = 'ok';
+  var prioridad  = {ok:0, parcial:1, debe:2};
+  var detalle    = [];
+
+  inscTodas.forEach(function(insc) {
+    var pm = Number(insc.monto) || 0;
+    if (!pm) return;
+
+    var mD = insc.desde ? normFecha(insc.desde).substring(0,7) : '';
+    if (!mD || mD > mesHoy) return; // no empezÃ³ aÃºn
+
+    // Hasta: fecha de baja si tiene, sino mes actual
+    var mH = insc.hasta ? normFecha(insc.hasta).substring(0,7) : mesHoy;
+
+    // Meses transcurridos en este periodo
+    var d1 = mD.split('-'), d2 = mH.split('-');
+    var mesesT = (parseInt(d2[0]) - parseInt(d1[0])) * 12 + (parseInt(d2[1]) - parseInt(d1[1])) + 1;
+    if (mesesT < 1) mesesT = 1;
+
+    // Total pagado para esta actividad dentro del periodo
+    var totalPagado = 0;
+    (CUOTAS_DB.cuotas || []).forEach(function(row) {
+      var docPago  = (row[0] || '').toString().trim();
+      var concepto = (row[2] || '').toString().trim();
+      // row[5] = fechaPago, puede ser dd/MM/yyyy o yyyy-MM-dd
+      var mesPago  = normFecha((row[5] || '').toString().trim()).substring(0, 7);
+      var monto    = Number(row[6]) || 0;
+      if (docPago !== dni) return;
+      if (concepto !== insc.plan) return;
+      if (mesPago < mD || mesPago > mH) return;
+      totalPagado += monto;
+    });
+
+    var totalRequerido = mesesT * pm;
+    var diff = totalPagado - totalRequerido;
+
+    var estadoInsc = diff >= 0 ? 'ok' : (diff > -pm ? 'parcial' : 'debe');
+    if ((prioridad[estadoInsc]||0) > (prioridad[estadoPeor]||0)) estadoPeor = estadoInsc;
+
+    if (diff < 0) deudaTotal  += Math.abs(diff);
+    else          favorTotal  += diff;
+
+    detalle.push({
+      plan: insc.plan, monto: pm,
+      mesesT: mesesT, totalPagado: totalPagado, totalRequerido: totalRequerido,
+      diff: diff, estado: estadoInsc,
+      vigente: !insc.hasta || normFecha(insc.hasta).substring(0,7) >= mesHoy
+    });
+  });
+
+  return {
+    estado:          estadoPeor,
+    deuda:           deudaTotal,
+    saldoAFavor:     favorTotal,
+    deudaActividad:  deudaTotal,
+    deudaSocial:     0,
+    planNom:         planNom || (inscTodas[0] ? inscTodas[0].plan : null),
+    planMonto:       planMonto,
+    saldoNeto:       favorTotal - deudaTotal,
+    detalle:         detalle
+  };
 }
+
+// Alias de compatibilidad â€” todo el codigo existente llama a estadoCuotaV2
+// Lo redirigimos a la nueva funcion sin tocar cada llamada individual
+function estadoCuotaV2(f) { return calcularEstadoTiempoReal(f); }
 
 function periodoLabel(p){ var a = p.split('-'); var m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']; return m[parseInt(a[1])-1] + ' ' + a[0]; }
 
@@ -1473,6 +1560,8 @@ function renderPlayers() {
     }
     // Chips de actividades (dentro del div con padding, foto no pisa)
     var actStr = (f[COL.ACTIVIDADES]||'').toString().trim();
+  if(actStr === 'Hoja 1' || actStr === 'Hoja1') actStr = '';
+    if(actStr === 'Hoja 1' || actStr === 'Hoja1') actStr = '';
     if(actStr) {
       var actArr = actStr.split(',').map(function(a){ return a.trim(); }).filter(Boolean);
       if(actArr.length) {
@@ -1566,6 +1655,34 @@ function renderCuotas() {
   };
 }
 
+function calcularSaldoPorInscripcion(insc) {
+  // Wrapper que usa calcularEstadoTiempoReal para consistencia total.
+  // Retorna el saldo especifico de UNA inscripcion para mostrar en el modal de cobro.
+  var dniStr = (insc.dni||'').toString().trim();
+  var pm = Number(insc.monto) || 0;
+  if (!pm) return {saldoPesos:0, faltaPesos:0, estado:'exacto', mesesExtra:0};
+
+  var cv = calcularEstadoTiempoReal(dniStr);
+  var d  = null;
+  for (var ii = 0; ii < cv.detalle.length; ii++) {
+    if (cv.detalle[ii].plan === insc.plan) { d = cv.detalle[ii]; break; }
+  }
+  if (!d) return {saldoPesos:0, faltaPesos:pm, estado:'debe', mesesExtra:0};
+
+  if (d.diff > 0) {
+    var pagoParcialActual = d.totalPagado % pm;
+    var faltaParaCompletar = pagoParcialActual > 0 ? (pm - pagoParcialActual) : 0;
+    return {saldoPesos:d.diff, faltaPesos:faltaParaCompletar,
+            estado:'favor', mesesExtra:Math.floor(d.diff/pm)};
+  } else if (d.diff === 0) {
+    return {saldoPesos:0, faltaPesos:pm, estado:'exacto', mesesExtra:0};
+  } else if (d.diff > -pm) {
+    return {saldoPesos:0, faltaPesos:Math.abs(d.diff), estado:'parcial', mesesExtra:0};
+  } else {
+    return {saldoPesos:0, faltaPesos:Math.abs(d.diff), estado:'debe', mesesExtra:0};
+  }
+}
+
 function abrirModalPago(dni, nom, pl, hoja, mo, plSoc, moSoc) {
   var _dniStr = dni.toString().trim();
   var _fJug = DB.jugadores.slice(1).find(function(f){ return (f[COL.DNI]||f[COL.TARJETA]||'').toString().trim() === _dniStr; });
@@ -1597,11 +1714,35 @@ function abrirModalPago(dni, nom, pl, hoja, mo, plSoc, moSoc) {
     listaEl.innerHTML = inscVig.map(function(i, idx){
       var actObj = (DB.actividades||[]).find(function(a){ return a.nombre === i.plan; });
       var icono = actObj ? actObj.icono : '&#x1F4CB;';
-      return '<label class="pago-plan-row">'
-        + '<input type="checkbox" name="pp_check" value="' + idx + '" checked data-plan="' + i.plan + '" data-monto="' + i.monto + '" onchange="recalcularTotalPago()">'
+      var _sc = calcularSaldoPorInscripcion(i);
+      var _badge = '';
+      var _montoSugerido = Number(i.monto);
+      if(_sc.estado === 'favor') {
+        var _extra = _sc.mesesExtra > 0 ? ' (' + _sc.mesesExtra + ' mes' + (_sc.mesesExtra > 1 ? 'es' : '') + ' adelantado)' : '';
+        _badge = '<span style="background:rgba(26,122,60,.25);color:#6de097;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">'
+          + '+$' + Number(_sc.saldoPesos).toLocaleString('es-AR') + ' a favor' + _extra + '</span>';
+        if(_sc.faltaPesos > 0) {
+          _badge += '<span style="color:#aaa;font-size:10px;margin-left:4px;">sugerido: $' + Number(_sc.faltaPesos).toLocaleString('es-AR') + '</span>';
+          _montoSugerido = _sc.faltaPesos;
+        } else {
+          _badge += '<span style="color:#aaa;font-size:10px;margin-left:4px;">no requiere pago este mes</span>';
+          _montoSugerido = 0;
+        }
+      } else if(_sc.estado === 'parcial') {
+        _badge = '<span style="background:rgba(255,193,7,.15);color:#ffc107;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">'
+          + 'pago parcial â€” falta $' + Number(_sc.faltaPesos).toLocaleString('es-AR') + '</span>';
+        _montoSugerido = _sc.faltaPesos;
+      } else if(_sc.estado === 'debe') {
+        _badge = '<span style="background:rgba(220,53,69,.15);color:var(--red);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">'
+          + 'debe $' + Number(_sc.faltaPesos).toLocaleString('es-AR') + '</span>';
+        _montoSugerido = _sc.faltaPesos;
+      }
+      return '<label class="pago-plan-row" style="flex-wrap:wrap;gap:4px;">'
+        + '<input type="checkbox" name="pp_check" value="' + idx + '" checked data-plan="' + i.plan + '" data-monto="' + _montoSugerido + '" onchange="recalcularTotalPago()">'
         + '<span style="font-size:16px;">' + icono + '</span>'
         + '<span class="pago-plan-nombre">' + i.plan + '</span>'
-        + '<span class="pago-plan-monto">$' + Number(i.monto).toLocaleString('es-AR') + '</span>'
+        + '<span class="pago-plan-monto">$' + Number(i.monto).toLocaleString('es-AR') + '/mes</span>'
+        + _badge
         + '</label>';
     }).join('');
     recalcularTotalPago();
@@ -1682,15 +1823,15 @@ function confirmarPago() {
   pagos.forEach(function(item) {
     var p = {
       doc: pagoCtx.dni, nombre: pagoCtx.nombre, plan: item.plan,
+      concepto: item.plan,
       periodo: periodo, periodoDesde: desde, periodoHasta: hasta,
       fechaPago: _fecha, monto: item.monto, metodo: _metodo, cobrador: _cobrador, obs: _obs,
       hoja: pagoCtx.hoja
     };
     callScript({action:'registrarPago', pago:p, pass:TOKEN, _noRetry:true}, function(res){
       CUOTAS_DB.cuotas.push([p.doc, p.nombre, p.plan, p.periodoDesde, p.periodoHasta, p.fechaPago, p.monto, p.metodo, p.cobrador, p.obs, p.hoja, Date.now()]);
-      // Actualizar saldo en memoria local
-      var _jIdx = DB.jugadores.findIndex(function(jj){ return jj && (jj[COL.DNI]||'').toString() === p.doc.toString(); });
-      if(_jIdx >= 0 && res && res.nuevoSaldo !== undefined) { DB.jugadores[_jIdx][COL.SALDO] = res.nuevoSaldo; }
+      // Nueva arquitectura: el saldo se recalcula en tiempo real desde CUOTAS_DB.
+      // No hay col AA que actualizar.
       if(++done === pagos.length) {
         window._ultimoPago = {
           nombre: pagoCtx.nombre, dni: pagoCtx.dni,
@@ -1990,6 +2131,7 @@ function abrirM(ai) {
     }).join('');
   // Cargar actividades del socio
   var actStr = (f[COL.ACTIVIDADES]||'').toString().trim();
+  if(actStr === 'Hoja 1' || actStr === 'Hoja1' || /^\d+$/.test(actStr)) actStr = '';
   var actSocio = actStr ? actStr.split(',').map(function(a){ return a.trim(); }).filter(Boolean) : [];
   // Mostrar chips de actividades actuales
   var actListEl = document.getElementById('m-actividades-list');
@@ -2196,9 +2338,6 @@ function abrirNuevoSocio() {
   var selCat = document.getElementById('ns-categoria');
   selCat.innerHTML = '<option value="">-- Sin asignar --</option>';
   (DB.categorias||[]).forEach(function(c){ selCat.innerHTML += '<option value="' + c[0] + '">' + c[0] + '</option>'; });
-  var selPlan = document.getElementById('ns-plan');
-  selPlan.innerHTML = '<option value="">-- Sin plan --</option>';
-  (CUOTAS_DB.planes||[]).forEach(function(p){ selPlan.innerHTML += '<option value="' + p[0] + '">' + p[0] + '</option>'; });
   document.getElementById('modalNuevoSocio').classList.add('open');
 }
 function cerrarNuevoSocio(){ document.getElementById('modalNuevoSocio').classList.remove('open'); }
@@ -2228,7 +2367,7 @@ function guardarNuevoSocio() {
     c2nombre:(document.getElementById('ns-c2nombre')||{value:''}).value.trim(),
     c2tel:(document.getElementById('ns-c2tel')||{value:''}).value.trim(),
     categoria:document.getElementById('ns-categoria').value,
-    plan:document.getElementById('ns-plan').value
+    plan:''
   };
   mostrarLoader('Guardando...');
   // Armar contactos en formato "Nombre|Tel"
@@ -2997,7 +3136,15 @@ function setCards(cards){ document.getElementById('r-cards').innerHTML = cards.m
 function getMesSeleccionado(){ return document.getElementById('rMes').value; }
 function td(txt, cls){ return '<td' + (cls?' class="'+cls+'"':'') + '>' + txt + '</td>'; }
 function getRangoFechas(){ return {desde:document.getElementById('rDesde').value, hasta:document.getElementById('rHasta').value}; }
-function enRango(f, desde, hasta){ return (!desde || f >= desde) && (!hasta || f <= hasta); }
+function normFecha(f) {
+  if(!f) return '';
+  var s = f.toString().trim();
+  // Convertir dd/MM/yyyy o dd-MM-yyyy a yyyy-MM-dd para comparacion correcta
+  var m = s.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+  if(m) return m[3] + '-' + m[2] + '-' + m[1];
+  return s;
+}
+function enRango(f, desde, hasta){ var fn = normFecha(f); return (!desde || fn >= desde) && (!hasta || fn <= hasta); }
 
 function rptDeudores() {
   var cat = document.getElementById('rCat').value;
@@ -3456,6 +3603,6 @@ window.onload = function() {
   }
 };
 </script>
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.0</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.7</div>
 </body>
 </html>
