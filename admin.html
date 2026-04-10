@@ -980,7 +980,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.9.3</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.9.4</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -1069,13 +1069,21 @@ function aplicarBranding() {
   // Titulo y header
   document.title = nombreCorto + ' - Gestion';
 
-  // Logo
+  // Logo â€” usar getDriveDisplay para embedding correcto
   if(INST.logoUrl) {
-    var thumb = getDriveThumb(INST.logoUrl, 'w100');
+    var logoSrc = getDriveDisplay(INST.logoUrl);
     var imgs = ['header-logo-img', 'login-logo-img'];
     imgs.forEach(function(id) {
       var el = document.getElementById(id);
-      if(el) { el.src = thumb || INST.logoUrl; el.style.display = ''; }
+      if(el) {
+        el.src = logoSrc;
+        el.style.display = 'block';
+        el.onerror = function() {
+          // Fallback: thumbnail de Drive si falla lh3
+          this.onerror = function(){ this.onerror=null; this.style.display='none'; };
+          this.src = getDriveThumb(INST.logoUrl, 'w100') || INST.logoUrl;
+        };
+      }
     });
   }
 
@@ -1253,6 +1261,16 @@ function getDriveThumb(url, sz) {
   if(!m) m = url.match(/\/d\/([a-zA-Z0-9_-]{15,})/);
   if(!m) return '';
   return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=' + sz;
+}
+// Para logos e imagenes que se muestran en el HTML (no como foto de perfil)
+// usa uc?export=view que es embeddable directamente
+function getDriveDisplay(url) {
+  if(!url || typeof url !== 'string' || !url.trim()) return '';
+  var m = url.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+  if(!m) m = url.match(/\/d\/([a-zA-Z0-9_-]{15,})/);
+  if(!m) return url; // si no es Drive, usar directo
+  // lh3.googleusercontent.com/d/ID es la URL embeddable que funciona sin CORS
+  return 'https://lh3.googleusercontent.com/d/' + m[1];
 }
 
 // -- PERIODOS DE PAGO ---------------------------------------------
