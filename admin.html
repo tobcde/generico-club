@@ -520,14 +520,14 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
             <input type="text" class="emoji-search" placeholder="Buscar actividad..." oninput="filtrarEmojis(this.value)" id="emoji-search-input" style="margin-bottom:6px;">
             <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;" id="emoji-cats">
               <button type="button" class="emoji-cat-btn active" onclick="filtrarEmojisCat('')">Todos</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('deporte')">âš½ Deporte</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('fitness')">ðŸ’ª Fitness</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('bienestar')">ðŸ§˜ Bienestar</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('danza')">ðŸ’ƒ Danza</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('aereo')">ðŸª‚ AÃ©reo</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('teatro')">ðŸŽ­ Teatro</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('musica')">ðŸŽµ MÃºsica</button>
-              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('educacion')">ðŸ“š Edu</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('deporte')">&#x26BD; Deporte</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('fitness')">&#x1F4AA; Fitness</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('bienestar')">&#x1F9D8; Bienestar</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('danza')">&#x1F483; Danza</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('aereo')">&#x1FA82; A&#xE9;reo</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('teatro')">&#x1F3AD; Teatro</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('musica')">&#x1F3B5; M&#xFA;sica</button>
+              <button type="button" class="emoji-cat-btn" onclick="filtrarEmojisCat('educacion')">&#x1F4DA; Edu</button>
             </div>
             <div class="emoji-grid" id="emoji-grid"></div>
           </div>
@@ -980,7 +980,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.9.2</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.9.3</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -2427,127 +2427,127 @@ function enviarComprobanteEmail() {
 // -- EMOJI PICKER ------------------------------------------------
 var EMOJIS_DEPORTES = [
   // â”€â”€ DEPORTES DE PELOTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'âš½',n:'futbol soccer',c:'deporte'},
-  {e:'ðŸ€',n:'basquet basketball',c:'deporte'},
-  {e:'ðŸ',n:'voley volleyball',c:'deporte'},
-  {e:'ðŸŽ¾',n:'tenis',c:'deporte'},
-  {e:'ðŸ“',n:'ping pong tenis mesa',c:'deporte'},
-  {e:'ðŸ¸',n:'badminton',c:'deporte'},
-  {e:'âš¾',n:'beisbol',c:'deporte'},
-  {e:'ðŸˆ',n:'football americano',c:'deporte'},
-  {e:'ðŸ‰',n:'rugby',c:'deporte'},
-  {e:'ðŸ¥',n:'frisbee disco',c:'deporte'},
-  {e:'ðŸ¤¾',n:'handball balonmano',c:'deporte'},
-  {e:'ðŸ‘',n:'hockey cesped',c:'deporte'},
-  {e:'ðŸ’',n:'hockey hielo',c:'deporte'},
+  {e:'\u26BD',n:'futbol soccer',c:'deporte'},
+  {e:'\uD83C\uDFC0',n:'basquet basketball',c:'deporte'},
+  {e:'\uD83C\uDFD0',n:'voley volleyball',c:'deporte'},
+  {e:'\uD83C\uDFBE',n:'tenis',c:'deporte'},
+  {e:'\uD83C\uDFD3',n:'ping pong tenis mesa',c:'deporte'},
+  {e:'\uD83C\uDFF8',n:'badminton',c:'deporte'},
+  {e:'\u26BE',n:'beisbol',c:'deporte'},
+  {e:'\uD83C\uDFC8',n:'football americano',c:'deporte'},
+  {e:'\uD83C\uDFC9',n:'rugby',c:'deporte'},
+  {e:'\uD83E\uDD4F',n:'frisbee disco',c:'deporte'},
+  {e:'\uD83E\uDD3E',n:'handball balonmano',c:'deporte'},
+  {e:'\uD83C\uDFD1',n:'hockey cesped',c:'deporte'},
+  {e:'\uD83C\uDFD2',n:'hockey hielo',c:'deporte'},
 
   // â”€â”€ DEPORTES DE COMBATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸ¥Š',n:'boxeo boxing',c:'deporte'},
-  {e:'ðŸ¥‹',n:'artes marciales judo karate taekwondo',c:'deporte'},
-  {e:'ðŸ¤¼',n:'lucha wrestling',c:'deporte'},
-  {e:'ðŸ¤º',n:'esgrima',c:'deporte'},
-  {e:'ðŸ›¡ï¸',n:'defensa personal',c:'deporte'},
+  {e:'\uD83E\uDD4A',n:'boxeo boxing',c:'deporte'},
+  {e:'\uD83E\uDD4B',n:'artes marciales judo karate taekwondo',c:'deporte'},
+  {e:'\uD83E\uDD3C',n:'lucha wrestling',c:'deporte'},
+  {e:'\uD83E\uDD3A',n:'esgrima',c:'deporte'},
+  {e:'\uD83D\uDEE1\uFE0F',n:'defensa personal',c:'deporte'},
 
   // â”€â”€ DEPORTES ACUÃTICOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸŠ',n:'natacion swimming',c:'deporte acuatico'},
-  {e:'ðŸ¤½',n:'polo acuatico waterpolo',c:'deporte acuatico'},
-  {e:'ðŸ„',n:'surf',c:'deporte acuatico'},
-  {e:'ðŸ¤¿',n:'buceo snorkel',c:'deporte acuatico'},
-  {e:'ðŸš£',n:'remo kayak',c:'deporte acuatico'},
+  {e:'\uD83C\uDFCA',n:'natacion swimming',c:'deporte acuatico'},
+  {e:'\uD83E\uDD3D',n:'polo acuatico waterpolo',c:'deporte acuatico'},
+  {e:'\uD83C\uDFC4',n:'surf',c:'deporte acuatico'},
+  {e:'\uD83E\uDD3F',n:'buceo snorkel',c:'deporte acuatico'},
+  {e:'\uD83D\uDEA3',n:'remo kayak',c:'deporte acuatico'},
 
   // â”€â”€ FITNESS Y GYM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸ‹ï¸',n:'gimnasio pesas musculacion crossfit',c:'fitness'},
-  {e:'ðŸ’ª',n:'fuerza entrenamiento musculo',c:'fitness'},
-  {e:'ðŸ¤¸',n:'gimnasia acrobacia calistenia',c:'fitness'},
-  {e:'ðŸ§—',n:'escalada climbing boulder',c:'fitness'},
-  {e:'ðŸ›¹',n:'skate skateboarding',c:'fitness deporte'},
-  {e:'ðŸš´',n:'ciclismo spinning bike',c:'fitness deporte'},
-  {e:'ðŸƒ',n:'running atletismo correr',c:'fitness deporte'},
-  {e:'â›¸ï¸',n:'patinaje hielo roller',c:'fitness deporte'},
-  {e:'ðŸŽ¿',n:'esqui ski snowboard',c:'deporte invierno'},
+  {e:'\uD83C\uDFCB\uFE0F',n:'gimnasio pesas musculacion crossfit',c:'fitness'},
+  {e:'\uD83D\uDCAA',n:'fuerza entrenamiento musculo',c:'fitness'},
+  {e:'\uD83E\uDD38',n:'gimnasia acrobacia calistenia',c:'fitness'},
+  {e:'\uD83E\uDDD7',n:'escalada climbing boulder',c:'fitness'},
+  {e:'\uD83D\uDEF9',n:'skate skateboarding',c:'fitness deporte'},
+  {e:'\uD83D\uDEB4',n:'ciclismo spinning bike',c:'fitness deporte'},
+  {e:'\uD83C\uDFC3',n:'running atletismo correr',c:'fitness deporte'},
+  {e:'\u26F8\uFE0F',n:'patinaje hielo roller',c:'fitness deporte'},
+  {e:'\uD83C\uDFBF',n:'esqui ski snowboard',c:'deporte invierno'},
 
   // â”€â”€ YOGA Y BIENESTAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸ§˜',n:'yoga meditacion mindfulness pilates',c:'bienestar'},
-  {e:'ðŸŒ¿',n:'bienestar natural holÃ­stico',c:'bienestar'},
-  {e:'â˜¯ï¸',n:'zen tai chi chi kung equilibrio',c:'bienestar'},
-  {e:'ðŸŒ¸',n:'flores bienestar relajacion femenino',c:'bienestar'},
-  {e:'ðŸ’†',n:'masaje relajacion spa',c:'bienestar'},
-  {e:'ðŸ«',n:'respiracion pranayama',c:'bienestar'},
-  {e:'ðŸŒŠ',n:'fluidez movimiento',c:'bienestar'},
+  {e:'\uD83E\uDDD8',n:'yoga meditacion mindfulness pilates',c:'bienestar'},
+  {e:'\uD83C\uDF3F',n:'bienestar natural holÃ­stico',c:'bienestar'},
+  {e:'\u262F\uFE0F',n:'zen tai chi chi kung equilibrio',c:'bienestar'},
+  {e:'\uD83C\uDF38',n:'flores bienestar relajacion femenino',c:'bienestar'},
+  {e:'\uD83D\uDC86',n:'masaje relajacion spa',c:'bienestar'},
+  {e:'\uD83E\uDEC1',n:'respiracion pranayama',c:'bienestar'},
+  {e:'\uD83C\uDF0A',n:'fluidez movimiento',c:'bienestar'},
 
   // â”€â”€ DANZA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸ’ƒ',n:'danza baile tango salsa flamenco latina mujer',c:'danza'},
-  {e:'ðŸ•º',n:'danza baile disco urbano hombre',c:'danza'},
-  {e:'ðŸ©°',n:'ballet danza clasica',c:'danza'},
-  {e:'ðŸ©»',n:'contemporaneo moderno danza',c:'danza'},
-  {e:'ðŸª©',n:'disco dance aerobics zumba',c:'danza'},
-  {e:'ðŸŽ­',n:'teatro danza movimiento expresion',c:'danza teatro'},
+  {e:'\uD83D\uDC83',n:'danza baile tango salsa flamenco latina mujer',c:'danza'},
+  {e:'\uD83D\uDD7A',n:'danza baile disco urbano hombre',c:'danza'},
+  {e:'\uD83E\uDE70',n:'ballet danza clasica',c:'danza'},
+  {e:'\uD83E\uDE7B',n:'contemporaneo moderno danza',c:'danza'},
+  {e:'\uD83E\uDEA9',n:'disco dance aerobics zumba',c:'danza'},
+  {e:'\uD83C\uDFAD',n:'teatro danza movimiento expresion',c:'danza teatro'},
 
   // â”€â”€ ARTES AÃ‰REAS Y CIRCO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸŽª',n:'circo espectaculo acrobacias',c:'aereo circo'},
-  {e:'ðŸ¤¸',n:'acrobacia aerea tela seda',c:'aereo circo'},
-  {e:'ðŸª‚',n:'tela aerea seda trapecio vuelo',c:'aereo circo'},
-  {e:'â­•',n:'aro aero lyra cerceau',c:'aereo circo'},
-  {e:'ðŸŽ¡',n:'rueda aerea cyr wheel',c:'aereo circo'},
-  {e:'ðŸ§µ',n:'tela aerea seda tejido',c:'aereo circo'},
-  {e:'ðŸŒ€',n:'acrobacia espiral giro',c:'aereo circo'},
-  {e:'ðŸŽ ',n:'carrusel espectaculo',c:'aereo circo'},
+  {e:'\uD83C\uDFAA',n:'circo espectaculo acrobacias',c:'aereo circo'},
+  {e:'\uD83E\uDD38',n:'acrobacia aerea tela seda',c:'aereo circo'},
+  {e:'\uD83E\uDE82',n:'tela aerea seda trapecio vuelo',c:'aereo circo'},
+  {e:'\u2B55',n:'aro aero lyra cerceau',c:'aereo circo'},
+  {e:'\uD83C\uDFA1',n:'rueda aerea cyr wheel',c:'aereo circo'},
+  {e:'\uD83E\uDDF5',n:'tela aerea seda tejido',c:'aereo circo'},
+  {e:'\uD83C\uDF00',n:'acrobacia espiral giro',c:'aereo circo'},
+  {e:'\uD83C\uDFA0',n:'carrusel espectaculo',c:'aereo circo'},
 
   // â”€â”€ TEATRO Y ACTUACIÃ“N â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸŽ­',n:'teatro actuacion drama comedia',c:'teatro'},
-  {e:'ðŸŽ¬',n:'teatro cinematica direccion',c:'teatro'},
-  {e:'ðŸŽ¤',n:'actuacion voz canto comedia musical',c:'teatro musica'},
-  {e:'ðŸŽ™ï¸',n:'microfono comedia stand up impro',c:'teatro'},
-  {e:'ðŸ¤¡',n:'comedia clown payaso',c:'teatro comedia'},
-  {e:'ðŸ˜‚',n:'comedia humor stand up',c:'comedia'},
-  {e:'ðŸƒ',n:'improvisacion juego teatral',c:'teatro comedia'},
-  {e:'ðŸ“¢',n:'voz proyeccion locuciÃ³n',c:'teatro'},
-  {e:'ðŸŽ¨',n:'artes escenicas expresion',c:'teatro'},
-  {e:'ðŸª„',n:'magia ilusionismo',c:'teatro circo'},
-  {e:'ðŸŽ©',n:'magia teatro elegancia',c:'teatro'},
-  {e:'ðŸ‘º',n:'mascara teatro expresion',c:'teatro'},
-  {e:'ðŸŽŸï¸',n:'espectaculo funcion evento',c:'teatro'},
+  {e:'\uD83C\uDFAD',n:'teatro actuacion drama comedia',c:'teatro'},
+  {e:'\uD83C\uDFAC',n:'teatro cinematica direccion',c:'teatro'},
+  {e:'\uD83C\uDFA4',n:'actuacion voz canto comedia musical',c:'teatro musica'},
+  {e:'\uD83C\uDF99\uFE0F',n:'microfono comedia stand up impro',c:'teatro'},
+  {e:'\uD83E\uDD21',n:'comedia clown payaso',c:'teatro comedia'},
+  {e:'\uD83D\uDE02',n:'comedia humor stand up',c:'comedia'},
+  {e:'\uD83C\uDCCF',n:'improvisacion juego teatral',c:'teatro comedia'},
+  {e:'\uD83D\uDCE2',n:'voz proyeccion locuciÃ³n',c:'teatro'},
+  {e:'\uD83C\uDFA8',n:'artes escenicas expresion',c:'teatro'},
+  {e:'\uD83E\uDE84',n:'magia ilusionismo',c:'teatro circo'},
+  {e:'\uD83C\uDFA9',n:'magia teatro elegancia',c:'teatro'},
+  {e:'\uD83D\uDC7A',n:'mascara teatro expresion',c:'teatro'},
+  {e:'\uD83C\uDF9F\uFE0F',n:'espectaculo funcion evento',c:'teatro'},
 
   // â”€â”€ MÃšSICA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸŽµ',n:'musica canto vocal',c:'musica'},
-  {e:'ðŸŽ¶',n:'musica melodia armonia',c:'musica'},
-  {e:'ðŸŽ¸',n:'guitarra rock banda',c:'musica'},
-  {e:'ðŸŽ¹',n:'piano teclado',c:'musica'},
-  {e:'ðŸ¥',n:'bateria percusion ritmo',c:'musica'},
-  {e:'ðŸŽº',n:'trompeta viento metal',c:'musica'},
-  {e:'ðŸŽ»',n:'violin violoncello cuerda orquesta',c:'musica'},
-  {e:'ðŸª—',n:'acordeon bandeoneon tango folklore',c:'musica'},
-  {e:'ðŸª˜',n:'percusion latin ritmo',c:'musica'},
-  {e:'ðŸŽ·',n:'saxofon jazz blues',c:'musica'},
-  {e:'ðŸŽ¤',n:'canto vocal coach',c:'musica'},
-  {e:'ðŸŽ¼',n:'composicion musica teorÃ­a',c:'musica'},
+  {e:'\uD83C\uDFB5',n:'musica canto vocal',c:'musica'},
+  {e:'\uD83C\uDFB6',n:'musica melodia armonia',c:'musica'},
+  {e:'\uD83C\uDFB8',n:'guitarra rock banda',c:'musica'},
+  {e:'\uD83C\uDFB9',n:'piano teclado',c:'musica'},
+  {e:'\uD83E\uDD41',n:'bateria percusion ritmo',c:'musica'},
+  {e:'\uD83C\uDFBA',n:'trompeta viento metal',c:'musica'},
+  {e:'\uD83C\uDFBB',n:'violin violoncello cuerda orquesta',c:'musica'},
+  {e:'\uD83E\uDE97',n:'acordeon bandeoneon tango folklore',c:'musica'},
+  {e:'\uD83E\uDE98',n:'percusion latin ritmo',c:'musica'},
+  {e:'\uD83C\uDFB7',n:'saxofon jazz blues',c:'musica'},
+  {e:'\uD83C\uDFA4',n:'canto vocal coach',c:'musica'},
+  {e:'\uD83C\uDFBC',n:'composicion musica teorÃ­a',c:'musica'},
 
   // â”€â”€ COMEDIA MUSICAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸŒŸ',n:'estrella estrellato musical',c:'musical'},
-  {e:'âœ¨',n:'brillo show espectaculo musical',c:'musical'},
-  {e:'ðŸŽŠ',n:'celebracion show gala',c:'musical'},
-  {e:'ðŸŽ‡',n:'fuegos artificiales gran show',c:'musical'},
-  {e:'ðŸ¦©',n:'elegancia danza musical',c:'musical'},
-  {e:'ðŸŽ€',n:'femenino elegante show',c:'musical'},
-  {e:'ðŸ‘‘',n:'rey reina estelar protagonista',c:'musical'},
+  {e:'\uD83C\uDF1F',n:'estrella estrellato musical',c:'musical'},
+  {e:'\u2728',n:'brillo show espectaculo musical',c:'musical'},
+  {e:'\uD83C\uDF8A',n:'celebracion show gala',c:'musical'},
+  {e:'\uD83C\uDF87',n:'fuegos artificiales gran show',c:'musical'},
+  {e:'\uD83E\uDDA9',n:'elegancia danza musical',c:'musical'},
+  {e:'\uD83C\uDF80',n:'femenino elegante show',c:'musical'},
+  {e:'\uD83D\uDC51',n:'rey reina estelar protagonista',c:'musical'},
 
   // â”€â”€ IDIOMAS Y EDUCACIÃ“N â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸ“š',n:'clases estudio academia',c:'educacion'},
-  {e:'âœï¸',n:'taller clase workshop',c:'educacion'},
-  {e:'ðŸŽ“',n:'graduacion matricula certificacion',c:'educacion'},
-  {e:'ðŸ—£ï¸',n:'idioma oratoria comunicacion',c:'educacion'},
-  {e:'ðŸ–¥ï¸',n:'tecnologia programacion informatica',c:'educacion'},
-  {e:'ðŸ”¬',n:'ciencias laboratorio',c:'educacion'},
-  {e:'ðŸ§®',n:'matematicas calculos',c:'educacion'},
+  {e:'\uD83D\uDCDA',n:'clases estudio academia',c:'educacion'},
+  {e:'\u270F\uFE0F',n:'taller clase workshop',c:'educacion'},
+  {e:'\uD83C\uDF93',n:'graduacion matricula certificacion',c:'educacion'},
+  {e:'\uD83D\uDDE3\uFE0F',n:'idioma oratoria comunicacion',c:'educacion'},
+  {e:'\uD83D\uDDA5\uFE0F',n:'tecnologia programacion informatica',c:'educacion'},
+  {e:'\uD83D\uDD2C',n:'ciencias laboratorio',c:'educacion'},
+  {e:'\uD83E\uDDEE',n:'matematicas calculos',c:'educacion'},
 
   // â”€â”€ ADMINISTRACIÃ“N â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  {e:'ðŸ“‹',n:'planilla inscripcion lista',c:'admin'},
-  {e:'ðŸ’°',n:'dinero pago cuota',c:'admin'},
-  {e:'ðŸ†',n:'trofeo copa campeonato',c:'admin'},
-  {e:'ðŸ¥‡',n:'primer lugar medalla oro',c:'admin'},
-  {e:'ðŸ…',n:'medalla distincion',c:'admin'},
-  {e:'ðŸ“…',n:'calendario turno horario',c:'admin'},
-  {e:'ðŸ”‘',n:'acceso entrada inscripcion',c:'admin'},
+  {e:'\uD83D\uDCCB',n:'planilla inscripcion lista',c:'admin'},
+  {e:'\uD83D\uDCB0',n:'dinero pago cuota',c:'admin'},
+  {e:'\uD83C\uDFC6',n:'trofeo copa campeonato',c:'admin'},
+  {e:'\uD83E\uDD47',n:'primer lugar medalla oro',c:'admin'},
+  {e:'\uD83C\uDFC5',n:'medalla distincion',c:'admin'},
+  {e:'\uD83D\uDCC5',n:'calendario turno horario',c:'admin'},
+  {e:'\uD83D\uDD11',n:'acceso entrada inscripcion',c:'admin'},
 ];
 
 var _emojiTodos = EMOJIS_DEPORTES.slice();
