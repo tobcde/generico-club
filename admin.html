@@ -87,7 +87,14 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 
 /* CUOTAS */
 .cuotas-container{padding:20px;max-width:1200px;margin:0 auto;}
-.cuotas-resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.cuotas-resumen{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:0;transition:filter .3s,opacity .3s;}@media(max-width:680px){.cuotas-resumen{grid-template-columns:repeat(2,1fr);}}
+.cuotas-resumen.oculto{filter:blur(7px);pointer-events:none;user-select:none;}
+.res-card{transition:filter .3s;}
+.finanzas-panel{margin-bottom:20px;}
+.finanzas-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;}
+.finanzas-titulo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);}
+.finanzas-toggle{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;transition:all .2s;font-family:'Barlow',sans-serif;}
+.finanzas-toggle:hover{border-color:var(--primary);color:var(--text);}
 .res-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
 .res-n{font-family:'Barlow Condensed';font-size:28px;font-weight:800;}
 .res-l{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:4px;}
@@ -364,14 +371,25 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
       <button class="btn btn-secondary" onclick="marcarTodosMes()" style="font-size:11px;padding:8px 12px;">Marcar todos pagados</button>
       <button class="btn btn-secondary" onclick="exportarCSV()" style="font-size:11px;padding:8px 12px;">&#x2193; CSV</button>
     </div>
-    <div class="cuotas-resumen">
+    <div class="finanzas-panel">
+    <div class="finanzas-header">
+      <span class="finanzas-titulo">Resumen financiero</span>
+      <button class="finanzas-toggle" id="btn-toggle-finanzas" onclick="toggleFinanzas()">
+        <span id="fin-icon">&#x1F441;</span>
+        <span id="fin-lbl">Mostrar</span>
+      </button>
+    </div>
+    <div class="cuotas-resumen oculto" id="fin-panel">
       <div class="res-card"><div class="res-n" id="rc-total">0</div><div class="res-l" id="lbl-rc-socios">Con plan</div></div>
       <div class="res-card"><div class="res-n" id="rc-pagaron" style="color:#6de097;">0</div><div class="res-l">Al dia</div></div>
       <div class="res-card"><div class="res-n" id="rc-deben" style="color:var(--red);">0</div><div class="res-l">Deben</div></div>
       <div class="res-card"><div class="res-n" id="rc-vence" style="color:var(--orange);">0</div><div class="res-l">Por vencer</div></div>
-      <div class="res-card"><div class="res-n" id="rc-recaudado" style="color:#6de097;">$0</div><div class="res-l">Recaudado</div></div>
-      <div class="res-card"><div class="res-n" id="rc-esperado" style="color:var(--secondary);">$0</div><div class="res-l">Esperado</div></div>
+      <div class="res-card" title="Total recaudado en el periodo seleccionado"><div class="res-n" id="rc-recaudado" style="color:#6de097;">$0</div><div class="res-l">Recaudado</div></div>
+      <div class="res-card" title="Ingreso esperado si todos pagan este mes"><div class="res-n" id="rc-esperado" style="color:var(--secondary);">$0</div><div class="res-l">Esperado mes</div></div>
+      <div class="res-card" title="Suma de deudas de todos los periodos"><div class="res-n" id="rc-deuda-total" style="color:var(--red);">$0</div><div class="res-l">Deuda acumulada</div></div>
+      <div class="res-card" title="Suma de saldos a favor (pagaron de mas)"><div class="res-n" id="rc-favor-total" style="color:#6de097;">$0</div><div class="res-l">A favor acumulado</div></div>
     </div>
+  </div><!-- /finanzas-panel -->
     <div class="cuotas-table-wrap">
       <div class="cuotas-table-header">
         <span class="cuotas-table-title" id="cuotas-table-title">Cuotas</span>
@@ -889,7 +907,8 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
             Agregar cobro extraordinario
           </label>
           <div id="mp-extra-wrap" style="display:none;margin-top:8px;display:grid;grid-template-columns:1fr 100px;gap:6px;">
-            <input id="mp-extra-desc" class="edit-input" placeholder="ej: Inscripcion torneo">
+            <input id="mp-extra-desc" list="mp-extra-sugerencias" class="edit-input" placeholder="ej: Inscripcion torneo">
+        <datalist id="mp-extra-sugerencias"><option value="Matricula"><option value="Cuota social"><option value="Inscripcion torneo"><option value="Uniforme"><option value="Examen"><option value="Material"><option value="Seguro"></datalist>
             <input id="mp-extra-monto" type="number" class="edit-input" placeholder="$">
           </div>
         </div>
@@ -980,7 +999,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);padding:
 </div>
 
 <!-- VERSION BADGE -->
-<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.9.4</div>
+<div id="vbadge" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid var(--secondary);color:var(--secondary);font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 8px;border-radius:6px;z-index:9999;">v3.9.7</div>
 
 <!-- PWA BANNER -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--primary-dark),var(--bg));border-top:2px solid var(--primary);padding:14px 20px;align-items:center;gap:14px;">
@@ -1618,18 +1637,27 @@ function renderCuotas() {
   var busq = document.getElementById('cBusq').value.toLowerCase(), per = document.getElementById('cPeriodo').value;
   document.getElementById('cuotas-table-title').innerText = 'Cuotas - ' + periodoLabel(per);
   var act = DB.jugadores.slice(1).filter(function(f){ var a = f[COL.ACTIVO]; return a===true||String(a).toLowerCase()==='si'||String(a).toLowerCase()==='true'; });
-  var tc=0, pa=0, de=0, pv=0, re=0, es=0, rows=[];
+  var tc=0, pa=0, de=0, pv=0, re=0, es=0, deudaAcum=0, saldoFavorAcum=0, rows=[];
   act.forEach(function(f){
     var nom = (f[COL.APELLIDO] + ' ' + f[COL.NOMBRE]||'').toLowerCase();
     var dni = (f[COL.DNI]||f[COL.TARJETA]||'').toString(), cat = f[COL.CATEGORIA_APP]||'';
-    var mo = 0;
     var cv = estadoCuotaV2(f), est = cv.estado;
+    var mo = cv.planMonto || 0;
     var pagos = CUOTAS_DB.cuotas.filter(function(c){ return c[0] == dni; });
     var hoy2 = new Date(); hoy2.setHours(0,0,0,0);
     var pagosVigentes = pagos.filter(function(c){ var h = parseDate(c[4]); return h && h >= hoy2; });
     var pagado = pagosVigentes.reduce(function(s,c){ return s + Number(c[6]||0); }, 0);
     var ult = pagos.length ? pagos[pagos.length-1] : null;
     var hastaStr = pagosVigentes.length ? pagosVigentes.reduce(function(mx,c){ var h = parseDate(c[4]); return (!mx||h>mx)?h:mx; }, null) : null;
+    // Detectar cobros extraordinarios del perÃ­odo seleccionado
+    var _planNombes = (cv.planNom||'').split(' + ');
+    var _extras = pagos.filter(function(p){
+      var mesPago = normFecha((p[5]||'').toString()).substring(0,7);
+      return mesPago === per && _planNombes.indexOf(p[2]||'') === -1 && (p[2]||'') !== '';
+    });
+    // Deduplicar conceptos extraordinarios
+    var _extraConceptos = [];
+    _extras.forEach(function(p){ if(_extraConceptos.indexOf(p[2])===-1) _extraConceptos.push(p[2]); });
     if(filt==='sinplan' && cv.planNom) return;
     if(filt==='ok' && est!=='ok') return;
     if(filt==='debe' && est!=='debe') return;
@@ -1637,8 +1665,8 @@ function renderCuotas() {
     if(!filt && !cv.planNom) return;
     if(fcat && cat !== fcat) return;
     if(busq && !nom.includes(busq) && !dni.includes(busq)) return;
-    if(cv.planNom){ tc++; es+=mo; if(est==='ok'){pa++;re+=pagado;} else if(est==='vence'){pv++;re+=pagado;} else de++; }
-    rows.push({f:f, pl:cv.planNom||'', mo:mo, est:est, hasta:cv.hasta, hastaStr:hastaStr, pagado:pagado});
+    if(cv.planNom){ tc++; es+=mo; if(est==='ok'){pa++;re+=pagado;} else if(est==='vence'){pv++;re+=pagado;} else de++; deudaAcum+=(cv.deuda||0); saldoFavorAcum+=(cv.saldoAFavor||0); }
+    rows.push({f:f, pl:cv.planNom||'', mo:mo, est:est, hasta:cv.hasta, hastaStr:hastaStr, pagado:pagado, extraConceptos:_extraConceptos});
   });
   document.getElementById('rc-total').innerText = tc;
   document.getElementById('rc-pagaron').innerText = pa;
@@ -1646,6 +1674,8 @@ function renderCuotas() {
   document.getElementById('rc-vence').innerText = pv;
   document.getElementById('rc-recaudado').innerText = '$' + re.toLocaleString('es-AR');
   document.getElementById('rc-esperado').innerText = '$' + es.toLocaleString('es-AR');
+  document.getElementById('rc-deuda-total').innerText = deudaAcum > 0 ? '-$' + deudaAcum.toLocaleString('es-AR') : '$0';
+  document.getElementById('rc-favor-total').innerText = saldoFavorAcum > 0 ? '+$' + saldoFavorAcum.toLocaleString('es-AR') : '$0';
   var lista = document.getElementById('cuotasLista');
   if(!rows.length){ lista.innerHTML = '<div class="empty-state"><p>Sin resultados</p></div>'; return; }
   window._cuotaRows = rows;
@@ -1658,7 +1688,12 @@ function renderCuotas() {
     html += '<div class="ct-row">';
     html += '<div><div class="ct-nombre">' + (f[COL.APELLIDO]||'') + ', ' + (f[COL.NOMBRE]||'') + '</div><div class="ct-sub">Doc: ' + (f[COL.DNI]||f[COL.TARJETA]||'') + ' | ' + (f[COL.CATEGORIA_APP]||'Sin ' + T('grupo')) + '</div></div>';
     html += '<div><span class="cuota-pill ' + cl + '">' + lb + '</span></div>';
-    html += '<div><div style="font-size:12px;font-weight:600;">' + (it.pl||'-') + '</div><div style="font-size:12px;font-weight:700;color:var(--secondary);">' + (it.mo ? '$' + it.mo.toLocaleString('es-AR') : '') + '</div></div>';
+    var _chipExtras = it.extraConceptos && it.extraConceptos.length ?
+      it.extraConceptos.map(function(x){ return '<span style="background:rgba(201,162,39,.2);color:var(--secondary);font-size:10px;padding:1px 6px;border-radius:8px;margin-top:3px;display:inline-block;">+' + x + '</span>'; }).join(' ') : '';
+    html += '<div><div style="font-size:12px;font-weight:600;">' + (it.pl||'-') + '</div>' +
+            '<div style="font-size:12px;font-weight:700;color:var(--secondary);">' + (it.mo ? '$' + it.mo.toLocaleString('es-AR') : '') + '</div>' +
+            (_chipExtras ? '<div>' + _chipExtras + '</div>' : '') +
+            '</div>';
     html += '<div style="font-size:13px;font-weight:700;">' + (it.pagado ? '$' + it.pagado.toLocaleString('es-AR') : '-') + '</div>';
     html += '<div style="font-size:12px;color:var(--muted);">' + _vigente + '</div>';
     html += '<div><button class="btn btn-save" style="padding:6px 10px;font-size:11px;" data-idx="' + idx + '" data-action="cobrar">COBRAR</button></div>';
@@ -3740,6 +3775,16 @@ window.onload = function() {
 };
 
 document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ if(typeof cerrarModalPago==='function') cerrarModalPago(); if(typeof cerrarModal==='function') cerrarModal(); } });
+
+function toggleFinanzas() {
+  var panel = document.getElementById('fin-panel');
+  var icon  = document.getElementById('fin-icon');
+  var lbl   = document.getElementById('fin-lbl');
+  if(!panel) return;
+  var ahora_oculto = panel.classList.toggle('oculto');
+  icon.innerHTML = ahora_oculto ? '&#x1F441;' : '&#x1F648;';
+  lbl.innerText  = ahora_oculto ? 'Mostrar' : 'Ocultar';
+}
 </script>
 </body>
 </html>
